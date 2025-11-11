@@ -18,6 +18,7 @@ void main() {
       updatedAt: testDateTime,
       expiryDate: testExpiryDateTime,
       imageUrl: 'https://example.com/image.jpg',
+      version: 1,
     );
 
     const testJson = {
@@ -121,6 +122,7 @@ void main() {
           updatedAt: null,
           expiryDate: null,
           imageUrl: null,
+          version: 1,
         );
 
         // Act
@@ -162,6 +164,7 @@ void main() {
           updatedAt: null,
           expiryDate: null,
           imageUrl: null,
+          version: 1,
         );
 
         // Act
@@ -218,6 +221,7 @@ void main() {
           requiredPoints: 1000,
           isActive: true,
           createdAt: testDateTime,
+          version: 1,
         );
 
         final model2 = RedemptionOptionModel(
@@ -228,6 +232,7 @@ void main() {
           requiredPoints: 1000,
           isActive: true,
           createdAt: testDateTime,
+          version: 1,
         );
 
         // Act & Assert
@@ -245,6 +250,7 @@ void main() {
           requiredPoints: 1000,
           isActive: true,
           createdAt: testDateTime,
+          version: 1,
         );
 
         final model2 = RedemptionOptionModel(
@@ -255,6 +261,7 @@ void main() {
           requiredPoints: 1000,
           isActive: true,
           createdAt: testDateTime,
+          version: 1,
         );
 
         // Act & Assert

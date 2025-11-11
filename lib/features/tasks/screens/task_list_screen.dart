@@ -1,6 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/services/task_service.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/models/task_model.dart';
+import '../../../core/models/account_type.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -12,11 +15,19 @@ class TaskListScreen extends StatefulWidget {
 class _TaskListScreenState extends State<TaskListScreen> with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final TaskService _taskService = TaskService();
+  bool _isChildLinkedToParent = false;
+  bool _isSyncing = false;
+  
+  // Single stream subscription to prevent multiple rebuilds
+  late final Stream<List<TaskModel>> _tasksStream;
 
   @override
   void initState() {
     super.initState();
     _tabController = TabController(length: 3, vsync: this);
+    // Use today's materialized history as the source of truth for today's view
+    _tasksStream = _taskService.getTodayHistoryForCurrentUser();
+    _checkChildParentStatus();
   }
 
   @override
@@ -47,46 +58,47 @@ class _TaskListScreenState extends State<TaskListScreen> with SingleTickerProvid
           unselectedLabelColor: theme.colorScheme.onSurfaceVariant,
         ),
       ),
-      body: TabBarView(
-        controller: _tabController,
-        children: [
-          // Pending Tasks
-          StreamBuilder<List<TaskModel>>(
-            stream: _taskService.getAllMyTasks(),
-            builder: (context, snapshot) {
-              // Filter pending tasks in UI instead of query
-              if (snapshot.hasData) {
-                final pendingTasks = snapshot.data!.where((task) => task.status == TaskStatus.pending).toList();
-                final pendingSnapshot = AsyncSnapshot.withData(ConnectionState.active, pendingTasks);
-                return _buildTaskList(pendingSnapshot, 'No pending tasks');
-              }
-              return _buildTaskList(snapshot, 'No pending tasks');
-            },
-          ),
+      body: StreamBuilder<List<TaskModel>>(
+        stream: _tasksStream,
+        builder: (context, snapshot) {
+          return TabBarView(
+            controller: _tabController,
+            children: [
+              // Pending Tasks
+              Builder(
+                builder: (context) {
+                  if (snapshot.hasData) {
+                    final pendingTasks = snapshot.data!.where((task) => task.status == TaskStatus.pending).toList();
+                    final pendingSnapshot = AsyncSnapshot.withData(ConnectionState.active, pendingTasks);
+                    return _buildTaskList(pendingSnapshot, 'No pending tasks');
+                  }
+                  return _buildTaskList(snapshot, 'No pending tasks');
+                },
+              ),
 
-          // Completed Tasks
-          StreamBuilder<List<TaskModel>>(
-            stream: _taskService.getAllMyTasks(),
-            builder: (context, snapshot) {
-              // Filter completed tasks in UI instead of query
-              if (snapshot.hasData) {
-                final completedTasks = snapshot.data!.where((task) => task.status == TaskStatus.completed).toList();
-                final completedSnapshot = AsyncSnapshot.withData(ConnectionState.active, completedTasks);
-                return _buildTaskList(completedSnapshot, 'No completed tasks');
-              }
-              return _buildTaskList(snapshot, 'No completed tasks');
-            },
-          ),
+              // Completed Tasks
+              Builder(
+                builder: (context) {
+                  if (snapshot.hasData) {
+                    final completedTasks = snapshot.data!.where((task) => task.status == TaskStatus.completed).toList();
+                    final completedSnapshot = AsyncSnapshot.withData(ConnectionState.active, completedTasks);
+                    return _buildTaskList(completedSnapshot, 'No completed tasks');
+                  }
+                  return _buildTaskList(snapshot, 'No completed tasks');
+                },
+              ),
 
-          // All Tasks
-          StreamBuilder<List<TaskModel>>(
-            stream: _taskService.getAllMyTasks(),
-            builder: (context, snapshot) {
-              return _buildTaskList(snapshot, 'No tasks found');
-            },
-          ),
-        ],
+              // All Tasks
+              Builder(
+                builder: (context) {
+                  return _buildTaskList(snapshot, 'No tasks found');
+                },
+              ),
+            ],
+          );
+        },
       ),
+      floatingActionButton: _buildFloatingActionButtons(),
     );
   }
 
@@ -281,66 +293,94 @@ class _TaskListScreenState extends State<TaskListScreen> with SingleTickerProvid
             ),
 
             // Due date and created date
-            if (task.dueDate != null || task.createdAt != null)
-              Padding(
-                padding: const EdgeInsets.only(top: 8),
-                child: Row(
-                  children: [
-                    if (task.dueDate != null) ...[
-                      Icon(
-                        Icons.calendar_today,
-                        size: 16,
+            Padding(
+              padding: const EdgeInsets.only(top: 8),
+              child: Row(
+                children: [
+                  if (task.dueDate != null) ...[
+                    Icon(
+                      Icons.calendar_today,
+                      size: 16,
+                      color: task.isOverdue ? Colors.red : theme.colorScheme.onSurfaceVariant,
+                    ),
+                    const SizedBox(width: 4),
+                    Text(
+                      'Due: ${_formatDate(task.dueDate!)}',
+                      style: theme.textTheme.bodySmall?.copyWith(
                         color: task.isOverdue ? Colors.red : theme.colorScheme.onSurfaceVariant,
+                        fontWeight: task.isOverdue ? FontWeight.w600 : null,
                       ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Due: ${_formatDate(task.dueDate!)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: task.isOverdue ? Colors.red : theme.colorScheme.onSurfaceVariant,
-                          fontWeight: task.isOverdue ? FontWeight.w600 : null,
-                        ),
-                      ),
-                    ],
-                    if (task.dueDate != null && task.createdAt != null)
-                      const SizedBox(width: 16),
-                    if (task.createdAt != null) ...[
-                      Icon(
-                        Icons.access_time,
-                        size: 16,
-                        color: theme.colorScheme.onSurfaceVariant,
-                      ),
-                      const SizedBox(width: 4),
-                      Text(
-                        'Created: ${_formatDate(task.createdAt)}',
-                        style: theme.textTheme.bodySmall?.copyWith(
-                          color: theme.colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                    ],
+                    ),
                   ],
-                ),
+                  if (task.dueDate != null)
+                    const SizedBox(width: 16),
+                  // createdAt is non-nullable on TaskModel, always show it
+                  Icon(
+                    Icons.access_time,
+                    size: 16,
+                    color: theme.colorScheme.onSurfaceVariant,
+                  ),
+                  const SizedBox(width: 4),
+                  Text(
+                    'Created: ${_formatDate(task.createdAt)}',
+                    style: theme.textTheme.bodySmall?.copyWith(
+                      color: theme.colorScheme.onSurfaceVariant,
+                    ),
+                  ),
+                ],
               ),
+            ),
 
             // Action buttons
-            if (task.status == TaskStatus.pending)
-              Padding(
-                padding: const EdgeInsets.only(top: 12),
-                child: Row(
-                  children: [
+            Padding(
+              padding: const EdgeInsets.only(top: 12),
+              child: Row(
+                children: [
+                  // Quick Task toggle
+                  Expanded(
+                    flex: 2,
+                    child: OutlinedButton.icon(
+                      onPressed: () => _toggleQuickTask(task),
+                      icon: Icon(
+                        task.showInQuickTasks ? Icons.flash_on : Icons.flash_off,
+                        size: 16,
+                      ),
+                      label: Text(
+                        task.showInQuickTasks ? 'Remove from Quick Tasks' : 'Add to Quick Tasks',
+                        style: const TextStyle(fontSize: 12),
+                      ),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: task.showInQuickTasks 
+                            ? Colors.orange 
+                            : theme.colorScheme.primary,
+                        side: BorderSide(
+                          color: task.showInQuickTasks 
+                              ? Colors.orange 
+                              : theme.colorScheme.primary,
+                        ),
+                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                      ),
+                    ),
+                  ),
+                  
+                  if (task.status == TaskStatus.pending) ...[
+                    const SizedBox(width: 8),
                     Expanded(
                       child: OutlinedButton.icon(
                         onPressed: () => _completeTask(task),
-                        icon: const Icon(Icons.check),
-                        label: const Text('Mark Complete'),
+                        icon: const Icon(Icons.check, size: 16),
+                        label: const Text('Complete', style: TextStyle(fontSize: 12)),
                         style: OutlinedButton.styleFrom(
                           foregroundColor: Colors.green,
                           side: const BorderSide(color: Colors.green),
+                          padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
                         ),
                       ),
                     ),
                   ],
-                ),
+                ],
               ),
+            ),
           ],
         ),
       ),
@@ -469,6 +509,124 @@ class _TaskListScreenState extends State<TaskListScreen> with SingleTickerProvid
           ),
         );
       }
+    }
+  }
+
+  Future<void> _toggleQuickTask(TaskModel task) async {
+    try {
+      final newValue = !task.showInQuickTasks;
+      await _taskService.updateTask(
+        task.id,
+        showInQuickTasks: newValue,
+      );
+      
+      if (mounted) {
+        final action = newValue ? 'added to' : 'removed from';
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Task "${task.title}" $action Quick Tasks!'),
+            backgroundColor: newValue ? Colors.orange : Colors.blue,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('Error updating task: $e'),
+            backgroundColor: Colors.red,
+            behavior: SnackBarBehavior.floating,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Check if current user is a child linked to a parent
+  Future<void> _checkChildParentStatus() async {
+    final isLinked = await _taskService.isChildLinkedToParent();
+    if (mounted) {
+      setState(() {
+        _isChildLinkedToParent = isLinked;
+      });
+    }
+  }
+
+  // Task sync removed: parent->child sync is no longer supported in the UI.
+
+  /// Build floating action buttons based on user type
+  Widget? _buildFloatingActionButtons() {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) return null;
+
+    // Show Quick Task button for all users
+    if (currentUser.accountType.isChild && _isChildLinkedToParent) {
+      // Child linked to parent: show Add Task and Quick Task (no sync)
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Add Task button
+          FloatingActionButton(
+            heroTag: "add_task_fab",
+            onPressed: () => Navigator.pushNamed(context, '/create-task'),
+            backgroundColor: Colors.green,
+            child: const Icon(Icons.add),
+          ),
+          const SizedBox(height: 10),
+          // Quick Task button
+          FloatingActionButton(
+            heroTag: "quick_task_fab",
+            onPressed: () => Navigator.pushNamed(context, '/quick-tasks'),
+            backgroundColor: Colors.orange,
+            child: const Icon(Icons.flash_on),
+          ),
+        ],
+      );
+    } else if (currentUser.accountType.isChild) {
+      // Child not linked to parent: Show both Add Task and Quick Task buttons
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Add Task button
+          FloatingActionButton(
+            heroTag: "add_task_fab",
+            onPressed: () => Navigator.pushNamed(context, '/create-task'),
+            backgroundColor: Colors.green,
+            child: const Icon(Icons.add),
+          ),
+          const SizedBox(height: 10),
+          // Quick Task button
+          FloatingActionButton(
+            heroTag: "quick_task_fab",
+            onPressed: () => Navigator.pushNamed(context, '/quick-tasks'),
+            backgroundColor: Colors.orange,
+            child: const Icon(Icons.flash_on),
+          ),
+        ],
+      );
+    } else {
+      // Parent account: Show both buttons
+      return Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          // Add Task button
+          FloatingActionButton(
+            heroTag: "add_task_fab",
+            onPressed: () => Navigator.pushNamed(context, '/create-task'),
+            backgroundColor: Colors.green,
+            child: const Icon(Icons.add),
+          ),
+          const SizedBox(height: 10),
+          // Quick Task button
+          FloatingActionButton(
+            heroTag: "quick_task_fab",
+            onPressed: () => Navigator.pushNamed(context, '/quick-tasks'),
+            backgroundColor: Colors.orange,
+            child: const Icon(Icons.flash_on),
+          ),
+        ],
+      );
     }
   }
 }

@@ -4,6 +4,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
+import '../models/account_type.dart';
 import '../services/user_service.dart';
 import '../injection/injection.dart';
 
@@ -14,6 +15,9 @@ class AuthService {
   
   static final StreamController<UserModel?> _userController = StreamController<UserModel?>.broadcast();
   static UserModel? _currentUser;
+
+  // Local print override: silence all verbose prints in this service
+  static void print(Object? object) {}
 
   /// Initialize authentication service
   static Future<void> initialize() async {
@@ -45,6 +49,10 @@ class AuthService {
     final firebaseUser = _auth.currentUser;
     if (firebaseUser != null) {
       await _loadCurrentUser(firebaseUser);
+    } else {
+      // Ensure the stream emits initial null state
+      _currentUser = null;
+      _userController.add(null);
     }
     
     debugPrint('✅ AuthService initialized');
@@ -55,6 +63,13 @@ class AuthService {
 
   /// Get current user
   static UserModel? get currentUser => _currentUser;
+
+  /// Update the current user in memory (used after profile/family changes)
+  static void updateCurrentUser(UserModel user) {
+    _currentUser = user;
+    _userController.add(user);
+    debugPrint('🔄 Current user updated in AuthService: ${user.displayName} (familyId: ${user.familyId})');
+  }
 
   /// Check if user is authenticated
   static bool get isAuthenticated => _currentUser != null;
@@ -90,6 +105,7 @@ class AuthService {
     required String password,
     required String displayName,
     UserRole role = UserRole.child,
+    AccountType accountType = AccountType.child,
   }) async {
     try {
       debugPrint('🔐 Signing up with email: $email');
@@ -103,13 +119,15 @@ class AuthService {
         // Update display name
         await credential.user!.updateDisplayName(displayName);
         
-        // Create user model
+        // Create user model without familyId (they'll create/join one later)
         final user = UserModel.create(
           id: credential.user!.uid,
           email: email,
           displayName: displayName,
           photoUrl: credential.user!.photoURL,
           role: role,
+          accountType: accountType,
+          familyId: null, // New users start without a family
         );
         
         // Save to database
@@ -344,6 +362,7 @@ class AuthService {
           email: firebaseUser.email ?? '',
           displayName: firebaseUser.displayName ?? 'Unknown User',
           photoUrl: firebaseUser.photoURL,
+          accountType: AccountType.child, // Default to child account for safety
         );
         
         await userService.createUser(user);
@@ -356,6 +375,14 @@ class AuthService {
       _currentUser = user;
       _userController.add(user);
       
+      // Initialize family relationships if user has a familyId
+      // TEMPORARILY DISABLED TO STOP AUTO-CREATION LOOP
+      // if (user.familyId != null) {
+      //   await _ensureFamilySetup(user);
+      // }
+      
+      // No more task syncing - child tasks are assigned individually
+      
       debugPrint('✅ User loaded successfully: ${user.displayName}');
       return user;
     } catch (e) {
@@ -363,6 +390,8 @@ class AuthService {
       return null;
     }
   }
+
+  // Family setup helpers removed - managed elsewhere.
 
   /// Convert Firebase Auth error codes to user-friendly messages
   static String _getFirebaseAuthErrorMessage(String errorCode) {
@@ -391,6 +420,8 @@ class AuthService {
         return 'Authentication failed. Please try again.';
     }
   }
+
+  // Task auto-sync removed - child tasks are assigned individually.
 
   /// Clean up resources
   static void dispose() {

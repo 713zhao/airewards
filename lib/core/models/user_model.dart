@@ -1,4 +1,5 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'account_type.dart';
 
 /// User model representing a family member in the AI Rewards system
 class UserModel {
@@ -7,6 +8,7 @@ class UserModel {
   final String displayName;
   final String? photoUrl;
   final UserRole role;
+  final AccountType accountType;
   final String? familyId;
   final int currentPoints;
   final int totalPointsEarned;
@@ -23,6 +25,7 @@ class UserModel {
     required this.displayName,
     this.photoUrl,
     required this.role,
+    required this.accountType,
     this.familyId,
     this.currentPoints = 0,
     this.totalPointsEarned = 0,
@@ -41,6 +44,7 @@ class UserModel {
     required String displayName,
     String? photoUrl,
     UserRole role = UserRole.child,
+    AccountType accountType = AccountType.child,
     String? familyId,
   }) {
     final now = DateTime.now();
@@ -50,6 +54,7 @@ class UserModel {
       displayName: displayName,
       photoUrl: photoUrl,
       role: role,
+      accountType: accountType,
       familyId: familyId,
       createdAt: now,
       lastLoginAt: now,
@@ -67,6 +72,7 @@ class UserModel {
         (e) => e.toString() == 'UserRole.${json['role']}',
         orElse: () => UserRole.child,
       ),
+      accountType: AccountType.fromString(json['accountType'] as String? ?? 'child'),
       familyId: json['familyId'] as String?,
       currentPoints: json['currentPoints'] as int? ?? 0,
       totalPointsEarned: json['totalPointsEarned'] as int? ?? 0,
@@ -98,6 +104,7 @@ class UserModel {
       'displayName': displayName,
       'photoUrl': photoUrl,
       'role': role.toString().split('.').last,
+      'accountType': accountType.value,
       'familyId': familyId,
       'currentPoints': currentPoints,
       'totalPointsEarned': totalPointsEarned,
@@ -126,6 +133,7 @@ class UserModel {
     String? displayName,
     String? photoUrl,
     UserRole? role,
+    AccountType? accountType,
     String? familyId,
     int? currentPoints,
     int? totalPointsEarned,
@@ -142,6 +150,7 @@ class UserModel {
       displayName: displayName ?? this.displayName,
       photoUrl: photoUrl ?? this.photoUrl,
       role: role ?? this.role,
+      accountType: accountType ?? this.accountType,
       familyId: familyId ?? this.familyId,
       currentPoints: currentPoints ?? this.currentPoints,
       totalPointsEarned: totalPointsEarned ?? this.totalPointsEarned,
@@ -182,10 +191,13 @@ class UserModel {
   }
 
   /// Check if user is a parent
-  bool get isParent => role == UserRole.parent;
+  bool get isParent => accountType == AccountType.parent;
 
   /// Check if user is a child
-  bool get isChild => role == UserRole.child;
+  bool get isChild => accountType == AccountType.child;
+  
+  /// Check if user has management permissions
+  bool get hasManagementPermissions => accountType.hasManagementPermissions;
 
   /// Check if user has sufficient points
   bool hasPoints(int requiredPoints) => currentPoints >= requiredPoints;

@@ -9,6 +9,7 @@ import '../services/firebase_service.dart';
 import '../services/auth_service.dart';
 import '../services/user_service.dart';
 import '../services/task_service.dart';
+import '../services/family_service.dart';
 import '../theme/theme_service.dart';
 import '../network/network_info.dart';
 import '../network/connectivity_service.dart';
@@ -49,9 +50,13 @@ Future<void> configureDependencies() async {
   // Register task service
   getIt.registerLazySingleton<TaskService>(() => TaskService());
   
+  // Register family service
+  getIt.registerLazySingleton<FamilyService>(() => FamilyService());
+  
   // Initialize services
   await AuthService.initialize();
   await getIt<ThemeService>().initialize();
+  await getIt<FamilyService>().initialize();
 }
 
 /// Reset all registrations (useful for testing)

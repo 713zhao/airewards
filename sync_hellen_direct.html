@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sync Hellen's Tasks</title>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
+</head>
+<body>
+  <h1>Syncing Hellen's Tasks...</h1>
+  <div id="status">Initializing...</div>
+
+  <script>
+    // Firebase config - you'll need to replace with your actual config
+    const firebaseConfig = {
+      apiKey: "AIzaSyDfaeSYAUBCju8vKe7dFhniKh2idXgF9KE",
+      authDomain: "ai-rewards-system.firebaseapp.com",
+      projectId: "ai-rewards-system",
+      storageBucket: "ai-rewards-system.firebasestorage.app",
+      messagingSenderId: "885183916565",
+      appId: "1:885183916565:web:4e77d7a2f075bc6e7c82e9"
+    };
+
+    // Initialize Firebase
+    firebase.initializeApp(firebaseConfig);
+    const db = firebase.firestore();
+
+    const familyId = '1762242518791';
+    const parentId = '1RNlv6HSD3chOgfBvGo5JwkOiOG3';
+    const hellenId = 'VXvntQXnP7eTYqJIOfXysvBt10K2';
+
+    async function syncHellenTasks() {
+      const statusDiv = document.getElementById('status');
+      
+      try {
+        statusDiv.innerHTML = '🔄 Starting sync for Hellen...';
+        
+        // Step 1: Delete all existing tasks for Hellen
+        statusDiv.innerHTML += '<br>🗑️ Deleting existing tasks for Hellen...';
+        const hellenTasksQuery = await db.collection('tasks')
+          .where('assignedToUserId', '==', hellenId)
+          .get();
+        
+        console.log(`Found ${hellenTasksQuery.docs.length} existing tasks for Hellen`);
+        
+        const batch = db.batch();
+        hellenTasksQuery.docs.forEach(doc => {
+          batch.delete(doc.ref);
+        });
+        
+        // Step 2: Get parent tasks as templates
+        statusDiv.innerHTML += '<br>📋 Getting parent task templates...';
+        const parentTasksQuery = await db.collection('tasks')
+          .where('assignedToUserId', '==', parentId)
+          .where('familyId', '==', familyId)
+          .get();
+        
+        console.log(`Found ${parentTasksQuery.docs.length} parent task templates`);
+        
+        // Step 3: Generate tasks for Hellen
+        const today = new Date();
+        const todayStart = new Date(today.getFullYear(), today.getMonth(), today.getDate());
+        let generatedCount = 0;
+        
+        parentTasksQuery.docs.forEach(doc => {
+          const parentTaskData = doc.data();
+          
+          // Create new task for Hellen
+          const newTaskId = db.collection('tasks').doc().id;
+          const hellenTaskData = {
+            ...parentTaskData,
+            id: newTaskId,
+            assignedToUserId: hellenId,
+            assignedByUserId: parentId,
+            createdAt: firebase.firestore.Timestamp.now(),
+            dueDate: firebase.firestore.Timestamp.fromDate(todayStart),
+            isCompleted: false,
+            completedAt: null,
+            approvedAt: null,
+            approvedByUserId: null,
+            status: 'pending',
+            tags: [...(parentTaskData.tags || []), 'synced-from-parent']
+          };
+          
+          batch.set(db.collection('tasks').doc(newTaskId), hellenTaskData);
+          generatedCount++;
+          
+          console.log(`Generated task: ${hellenTaskData.title} for Hellen`);
+        });
+        
+        // Commit all changes
+        if (generatedCount > 0) {
+          statusDiv.innerHTML += `<br>💾 Saving ${generatedCount} tasks...`;
+          await batch.commit();
+          statusDiv.innerHTML += `<br>✅ Successfully generated ${generatedCount} tasks for Hellen!`;
+        } else {
+          statusDiv.innerHTML += '<br>ℹ️ No tasks to generate for Hellen';
+        }
+        
+      } catch (error) {
+        console.error('Error syncing tasks for Hellen:', error);
+        statusDiv.innerHTML += `<br>❌ Error syncing tasks for Hellen: ${error.message}`;
+      }
+    }
+
+    // Run the sync
+    syncHellenTasks();
+  </script>
+</body>
+</html>

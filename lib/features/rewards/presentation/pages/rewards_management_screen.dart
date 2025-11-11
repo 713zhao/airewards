@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
 import 'add_edit_reward_screen.dart';
 import '../../../../core/services/reward_service.dart';
+import '../../../../core/services/auth_service.dart';
 import '../../../../core/models/reward_item.dart';
+import '../../../../core/models/account_type.dart';
 
 /// Screen for managing rewards (add/edit/delete)
 class RewardsManagementScreen extends StatefulWidget {
@@ -23,6 +25,11 @@ class _RewardsManagementScreenState extends State<RewardsManagementScreen> {
     _loadRewards();
   }
 
+  /// Check if current user can manage rewards
+  bool get _canManageRewards {
+    return _rewardService.canManageRewards();
+  }
+
   Future<void> _loadRewards() async {
     setState(() => _isLoading = true);
     await _rewardService.initialize();
@@ -35,13 +42,14 @@ class _RewardsManagementScreenState extends State<RewardsManagementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Manage Rewards'),
+        title: Text(_canManageRewards ? 'Manage Rewards' : 'View Rewards'),
         actions: [
-          IconButton(
-            onPressed: _addNewReward,
-            icon: const Icon(Icons.add),
-            tooltip: 'Add New Reward',
-          ),
+          if (_canManageRewards)
+            IconButton(
+              onPressed: _addNewReward,
+              icon: const Icon(Icons.add),
+              tooltip: 'Add New Reward',
+            ),
         ],
       ),
       body: ValueListenableBuilder<List<RewardItem>>(
@@ -349,40 +357,64 @@ class _RewardsManagementScreenState extends State<RewardsManagementScreen> {
               ],
             ),
             const SizedBox(height: 12),
-            Row(
-              children: [
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _editReward(reward),
-                    icon: const Icon(Icons.edit, size: 16),
-                    label: const Text('Edit'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _toggleRewardStatus(reward),
-                    icon: Icon(
-                      isActive ? Icons.pause : Icons.play_arrow,
-                      size: 16,
-                    ),
-                    label: Text(isActive ? 'Deactivate' : 'Activate'),
-                  ),
-                ),
-                const SizedBox(width: 8),
-                Expanded(
-                  child: OutlinedButton.icon(
-                    onPressed: () => _deleteReward(reward),
-                    icon: const Icon(Icons.delete, size: 16),
-                    label: const Text('Delete'),
-                    style: OutlinedButton.styleFrom(
-                      foregroundColor: Colors.red,
-                      side: const BorderSide(color: Colors.red),
+            if (_canManageRewards)
+              Row(
+                children: [
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _editReward(reward),
+                      icon: const Icon(Icons.edit, size: 16),
+                      label: const Text('Edit'),
                     ),
                   ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _toggleRewardStatus(reward),
+                      icon: Icon(
+                        isActive ? Icons.pause : Icons.play_arrow,
+                        size: 16,
+                      ),
+                      label: Text(isActive ? 'Deactivate' : 'Activate'),
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  Expanded(
+                    child: OutlinedButton.icon(
+                      onPressed: () => _deleteReward(reward),
+                      icon: const Icon(Icons.delete, size: 16),
+                      label: const Text('Delete'),
+                      style: OutlinedButton.styleFrom(
+                        foregroundColor: Colors.red,
+                        side: const BorderSide(color: Colors.red),
+                      ),
+                    ),
+                  ),
+                ],
+              )
+            else
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: Colors.grey.shade300),
                 ),
-              ],
-            ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(Icons.lock, size: 16, color: Colors.grey.shade600),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Management functions restricted to parents',
+                      style: TextStyle(
+                        color: Colors.grey.shade600,
+                        fontSize: 12,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
           ],
         ),
       ),

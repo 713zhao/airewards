@@ -7,6 +7,9 @@ class UserService {
   static const String _collection = 'users';
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
 
+  // Local print override: silence all verbose prints in this service
+  void print(Object? object) {}
+
   /// Create a new user
   Future<void> createUser(UserModel user) async {
     try {

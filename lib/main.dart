@@ -1,9 +1,9 @@
+import 'dart:async';
 import 'package:flutter/material.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'core/injection/injection.dart';
 import 'core/services/auth_service.dart';
-import 'core/models/user_model.dart';
 import 'core/theme/theme_service.dart';
 import 'shared/widgets/network_status_indicator.dart';
 import 'features/auth/login_screen.dart';
@@ -138,35 +138,47 @@ class SimpleAuthWrapper extends StatefulWidget {
 }
 
 class _SimpleAuthWrapperState extends State<SimpleAuthWrapper> {
-  bool _isCheckingAuth = true;
+  bool _isInitialized = false;
+  StreamSubscription? _authSubscription;
 
   @override
   void initState() {
     super.initState();
-    _checkAuthState();
+    _initializeAuth();
+    
+    // Listen to auth changes and rebuild when auth state changes
+    _authSubscription = AuthService.userStream.listen((user) {
+      if (mounted) {
+        setState(() {
+          // Trigger rebuild when auth state changes
+        });
+      }
+    });
   }
 
-  Future<void> _checkAuthState() async {
+  @override
+  void dispose() {
+    _authSubscription?.cancel();
+    super.dispose();
+  }
+
+  Future<void> _initializeAuth() async {
     try {
-      // Wait a moment for AuthService to initialize if needed
+      // Wait a bit for services to initialize
       await Future.delayed(const Duration(milliseconds: 500));
       
-      debugPrint('🔐 Checking authentication state...');
-      
-      // Check if user is already authenticated
-      final isAuthenticated = AuthService.isAuthenticated;
-      debugPrint('🔐 Authentication state: $isAuthenticated');
+      debugPrint('🔐 Auth wrapper initialized');
       
       if (mounted) {
         setState(() {
-          _isCheckingAuth = false;
+          _isInitialized = true;
         });
       }
     } catch (e) {
-      debugPrint('❌ Auth check failed: $e');
+      debugPrint('❌ Auth initialization failed: $e');
       if (mounted) {
         setState(() {
-          _isCheckingAuth = false;
+          _isInitialized = true;
         });
       }
     }
@@ -174,31 +186,21 @@ class _SimpleAuthWrapperState extends State<SimpleAuthWrapper> {
 
   @override
   Widget build(BuildContext context) {
-    if (_isCheckingAuth) {
-      debugPrint('🔐 Building AuthWrapper - checking authentication...');
+    if (!_isInitialized) {
+      debugPrint('🔐 Building AuthWrapper - initializing...');
       return const SplashScreen();
     }
 
-    return StreamBuilder<UserModel?>(
-      stream: AuthService.userStream,
-      builder: (context, snapshot) {
-        debugPrint('🔐 Auth stream state: ${snapshot.connectionState}, hasData: ${snapshot.hasData}');
-        
-        if (snapshot.connectionState == ConnectionState.waiting && !AuthService.isAuthenticated) {
-          return const SplashScreen();
-        }
-
-        final user = snapshot.data ?? AuthService.currentUser;
-        
-        if (user != null) {
-          debugPrint('🔐 User authenticated: ${user.displayName} (${user.email})');
-          return const MainAppScreen();
-        } else {
-          debugPrint('🔐 No user authenticated - showing LoginScreen');
-          return const LoginScreen();
-        }
-      },
-    );
+    // Check current auth state directly
+    final currentUser = AuthService.currentUser;
+    
+    if (currentUser != null) {
+      debugPrint('🔐 User authenticated: ${currentUser.displayName} (${currentUser.email})');
+      return const MainAppScreen();
+    } else {
+      debugPrint('🔐 No user authenticated - showing LoginScreen');
+      return const LoginScreen();
+    }
   }
 }
 

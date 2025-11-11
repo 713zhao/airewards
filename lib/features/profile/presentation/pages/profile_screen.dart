@@ -1,4 +1,10 @@
 import 'package:flutter/material.dart';
+import '../../../../core/services/auth_service.dart';
+import '../../../../core/services/user_service.dart';
+import '../../../../core/services/task_service.dart';
+import '../../../../core/services/reward_service.dart';
+import '../../../../core/models/user_model.dart';
+import '../../../../core/injection/injection.dart';
 
 /// Main profile screen with user information and settings
 class ProfileScreen extends StatefulWidget {
@@ -10,77 +16,130 @@ class ProfileScreen extends StatefulWidget {
 
 class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
-  Map<String, dynamic>? _userProfile;
+  UserModel? _currentUser;
   Map<String, dynamic>? _userStats;
   List<Map<String, dynamic>> _recentAchievements = [];
+  
+  late UserService _userService;
+  late TaskService _taskService;
+  late RewardService _rewardService;
 
   @override
   void initState() {
     super.initState();
+    _userService = getIt<UserService>();
+    _taskService = TaskService();
+    _rewardService = RewardService();
     _loadUserData();
   }
 
   Future<void> _loadUserData() async {
     setState(() => _isLoading = true);
     
-    // Simulate API calls
-    await Future.delayed(const Duration(milliseconds: 800));
-    
-    _generateMockData();
+    try {
+      final currentUser = AuthService.currentUser;
+      if (currentUser == null) {
+        debugPrint('❌ No authenticated user found');
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // Load current user data
+      _currentUser = await _userService.getUser(currentUser.id);
+      
+      if (_currentUser == null) {
+        debugPrint('❌ User data not found for ID: ${currentUser.id}');
+        setState(() => _isLoading = false);
+        return;
+      }
+
+      // Load task statistics
+      final taskStats = await _taskService.getMyTaskStats();
+      
+      // Load reward statistics (simplified - we'll get rewards count)
+      await _rewardService.initialize();
+      final rewards = _rewardService.getAvailableRewards(_currentUser!.currentPoints);
+      final totalRewards = rewards.length;
+      
+      // Calculate additional stats
+      final now = DateTime.now();
+      final memberDays = now.difference(_currentUser!.createdAt).inDays;
+      final averageDaily = memberDays > 0 ? (taskStats.approved / memberDays) : 0.0;
+      
+      _userStats = {
+        'totalRewards': totalRewards,
+        'completedThisWeek': taskStats.completedThisWeek,
+        'completedThisMonth': taskStats.completedThisMonth,
+        'totalApproved': taskStats.approved,
+        'averageDaily': averageDaily,
+        'totalPending': taskStats.pending,
+        'totalCompleted': taskStats.completed,
+        'favoriteCategory': 'General', // Could be calculated from most used category
+        'longestStreak': 0, // Would need streak tracking implementation
+      };
+
+      // Generate achievements from user's achievement list
+      _generateAchievements();
+      
+      debugPrint('✅ Profile data loaded successfully');
+    } catch (e) {
+      debugPrint('❌ Error loading profile data: $e');
+    }
     
     setState(() => _isLoading = false);
   }
 
-  void _generateMockData() {
-    _userProfile = {
-      'id': 'user_123',
-      'name': 'Alex Johnson',
-      'email': 'alex.johnson@example.com',
-      'avatar': null, // No avatar image
-      'memberSince': '2024-01-15',
-      'totalPoints': 2450,
-      'level': 12,
-      'nextLevelPoints': 2800,
-      'streak': 15,
-      'title': 'Reward Champion',
-      'bio': 'Passionate about personal growth and achieving goals!',
-    };
-
-    _userStats = {
-      'totalRewards': 47,
-      'completedThisWeek': 8,
-      'completedThisMonth': 23,
-      'averageDaily': 3.2,
-      'favoriteCategory': 'Health & Fitness',
-      'longestStreak': 28,
-    };
-
-    _recentAchievements = [
-      {
-        'id': '1',
-        'title': 'Week Warrior',
-        'description': 'Complete 7 rewards in one week',
-        'iconCodePoint': Icons.military_tech.codePoint,
-        'colorValue': Colors.amber.value,
-        'unlockedAt': DateTime.now().subtract(const Duration(days: 2)).toIso8601String(),
-      },
-      {
-        'id': '2',
-        'title': 'Health Hero',
-        'description': 'Complete 10 health & fitness rewards',
-        'iconCodePoint': Icons.favorite.codePoint,
-        'colorValue': Colors.red.value,
-        'unlockedAt': DateTime.now().subtract(const Duration(days: 5)).toIso8601String(),
-      },
-      {
-        'id': '3',
-        'title': 'Learning Leader',
-        'description': 'Complete 15 learning rewards',
-        'iconCodePoint': Icons.school.codePoint,
+  void _generateAchievements() {
+    _recentAchievements.clear();
+    
+    if (_currentUser == null) return;
+    
+    // Convert user achievements to display format
+    final achievements = _currentUser!.achievements;
+    
+    // Create achievement cards from user's achievements
+    for (int i = 0; i < achievements.length && i < 5; i++) {
+      final achievement = achievements[i];
+      
+      // Map achievement names to icons and colors
+      IconData icon = Icons.star;
+      Color color = Colors.blue;
+      
+      if (achievement.toLowerCase().contains('task')) {
+        icon = Icons.task_alt;
+        color = Colors.green;
+      } else if (achievement.toLowerCase().contains('point')) {
+        icon = Icons.stars;
+        color = Colors.amber;
+      } else if (achievement.toLowerCase().contains('week')) {
+        icon = Icons.calendar_view_week;
+        color = Colors.purple;
+      } else if (achievement.toLowerCase().contains('day')) {
+        icon = Icons.today;
+        color = Colors.orange;
+      }
+      
+      _recentAchievements.add({
+        'id': i.toString(),
+        'title': achievement.length > 20 ? '${achievement.substring(0, 17)}...' : achievement,
+        'description': 'Achievement unlocked!',
+        'iconCodePoint': icon.codePoint,
+        'colorValue': color.value,
+        'unlockedAt': DateTime.now().subtract(Duration(days: i + 1)).toIso8601String(),
+      });
+    }
+    
+    // If no achievements, show some default placeholder
+    if (_recentAchievements.isEmpty) {
+      _recentAchievements.add({
+        'id': '0',
+        'title': 'Getting Started',
+        'description': 'Welcome to AI Rewards!',
+        'iconCodePoint': Icons.celebration.codePoint,
         'colorValue': Colors.blue.value,
-        'unlockedAt': DateTime.now().subtract(const Duration(days: 10)).toIso8601String(),
-      },
-    ];
+        'unlockedAt': _currentUser!.createdAt.toIso8601String(),
+      });
+    }
   }
 
   @override
@@ -118,10 +177,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildProfileHeader() {
-    if (_userProfile == null) return const SizedBox();
+    if (_currentUser == null) return const SizedBox();
 
-    final levelProgress = (_userProfile!['totalPoints'] - 
-        (_userProfile!['level'] * 200)) / 200; // Simplified level calculation
+    // Calculate level based on total points earned (every 200 points = 1 level)
+    final level = (_currentUser!.totalPointsEarned / 200).floor() + 1;
+    final pointsInCurrentLevel = _currentUser!.totalPointsEarned % 200;
+    final levelProgress = pointsInCurrentLevel / 200;
+    final pointsToNextLevel = 200 - pointsInCurrentLevel;
 
     return Card(
       child: Padding(
@@ -137,7 +199,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                       radius: 40,
                       backgroundColor: Theme.of(context).primaryColor,
                       child: Text(
-                        _userProfile!['name'].substring(0, 1).toUpperCase(),
+                        _currentUser!.displayName.substring(0, 1).toUpperCase(),
                         style: const TextStyle(
                           fontSize: 32,
                           fontWeight: FontWeight.bold,
@@ -156,7 +218,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           border: Border.all(color: Colors.white, width: 2),
                         ),
                         child: Text(
-                          '${_userProfile!['level']}',
+                          '$level',
                           style: const TextStyle(
                             fontSize: 12,
                             fontWeight: FontWeight.bold,
@@ -173,13 +235,13 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        _userProfile!['name'],
+                        _currentUser!.displayName,
                         style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
                       ),
                       Text(
-                        _userProfile!['title'],
+                        _currentUser!.isParent ? 'Parent' : 'Family Member',
                         style: TextStyle(
                           color: Colors.amber.shade700,
                           fontWeight: FontWeight.w600,
@@ -195,7 +257,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${_userProfile!['totalPoints']} points',
+                            '${_currentUser!.currentPoints} points',
                             style: TextStyle(
                               fontWeight: FontWeight.w600,
                               color: Colors.grey.shade700,
@@ -212,7 +274,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                           ),
                           const SizedBox(width: 4),
                           Text(
-                            '${_userProfile!['streak']} day streak',
+                            '0 day streak', // Streak tracking not implemented yet
                             style: TextStyle(
                               color: Colors.grey.shade700,
                             ),
@@ -229,17 +291,16 @@ class _ProfileScreenState extends State<ProfileScreen> {
               ],
             ),
             
-            if (_userProfile!['bio'].isNotEmpty) ...[
-              const SizedBox(height: 12),
-              Text(
-                _userProfile!['bio'],
-                style: TextStyle(
-                  color: Colors.grey.shade600,
-                  fontSize: 14,
-                ),
-                textAlign: TextAlign.center,
+            // Bio section - could be added to user model later
+            const SizedBox(height: 12),
+            Text(
+              'Member since ${_formatDate(_currentUser!.createdAt)}',
+              style: TextStyle(
+                color: Colors.grey.shade600,
+                fontSize: 14,
               ),
-            ],
+              textAlign: TextAlign.center,
+            ),
             
             const SizedBox(height: 16),
             
@@ -250,11 +311,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
                     Text(
-                      'Level ${_userProfile!['level']}',
+                      'Level $level',
                       style: const TextStyle(fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      'Level ${_userProfile!['level'] + 1}',
+                      'Level ${level + 1}',
                       style: TextStyle(
                         color: Colors.grey.shade600,
                         fontWeight: FontWeight.bold,
@@ -270,7 +331,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
                 ),
                 const SizedBox(height: 4),
                 Text(
-                  '${_userProfile!['nextLevelPoints'] - _userProfile!['totalPoints']} points to next level',
+                  '${pointsToNextLevel.toInt()} points to next level',
                   style: TextStyle(
                     fontSize: 12,
                     color: Colors.grey.shade600,
@@ -366,7 +427,9 @@ class _ProfileScreenState extends State<ProfileScreen> {
   }
 
   Widget _buildLevelProgressCard() {
-    if (_userProfile == null) return const SizedBox();
+    if (_currentUser == null) return const SizedBox();
+    
+    final level = (_currentUser!.totalPointsEarned / 200).floor() + 1;
 
     return Card(
       child: Padding(
@@ -394,11 +457,11 @@ class _ProfileScreenState extends State<ProfileScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Current Level: ${_userProfile!['level']}',
+                        'Current Level: $level',
                         style: const TextStyle(fontWeight: FontWeight.bold),
                       ),
                       Text(
-                        'Total Points: ${_userProfile!['totalPoints']}',
+                        'Total Points: ${_currentUser!.totalPointsEarned}',
                         style: TextStyle(color: Colors.grey.shade600),
                       ),
                     ],
@@ -690,6 +753,14 @@ class _ProfileScreenState extends State<ProfileScreen> {
     } else {
       return '${date.day}/${date.month}';
     }
+  }
+
+  String _formatDate(DateTime date) {
+    final months = [
+      'Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun',
+      'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'
+    ];
+    return '${months[date.month - 1]} ${date.year}';
   }
 
   void _editProfile() {

@@ -1,4 +1,5 @@
 import 'package:flutter_test/flutter_test.dart';
+import 'package:ai_rewards_system/features/redemption/domain/entities/redemption_stats.dart';
 import 'package:ai_rewards_system/features/redemption/domain/repositories/redemption_repository.dart';
 
 void main() {

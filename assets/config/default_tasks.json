@@ -1,0 +1,92 @@
+[
+  {
+    "title": "Make Your Bed before you go to school",
+    "description": "Make your bed neatly every morning",
+    "category": "Chores",
+    "points": 10,
+  "isRecurring": false,
+  "recurrencePattern": { "type": "daily", "interval": 1 },
+    "showInQuickTasks": true
+  },
+  {
+    "title": "Take Out Trash",
+    "description": "Take the trash bins to the curb",
+    "category": "Chores",
+    "points": 15,
+  "isRecurring": false,
+  "recurrencePattern": { "type": "daily", "interval": 1 },
+    "showInQuickTasks": true
+  },
+  {
+    "title": "Help with Dishes",
+    "description": "Help wash, dry, or put away dishes",
+    "category": "Kitchen Help",
+    "points": 15,
+  "isRecurring": false,
+  "recurrencePattern": { "type": "weekly", "interval": 1, "daysOfWeek": [1, 2] },
+    "showInQuickTasks": true
+  },
+  {
+    "title": "Complete Homework",
+    "description": "Finish all assigned homework completely",
+    "category": "Homework",
+    "points": 20,
+  "isRecurring": true,
+  "recurrencePattern": { "type": "daily", "interval": 1 },
+    "showInQuickTasks": true
+  },
+  {
+    "title": "Read English Book for 30 Minutes",
+    "description": "Read an English book, magazine, or educational material",
+    "category": "Reading",
+    "points": 25,
+  "isRecurring": true,
+  "recurrencePattern": { "type": "daily", "interval": 1 },
+    "showInQuickTasks": true
+  },
+  {
+    "title": "Read Chinese Book for 15 Minutes",
+    "description": "Read Chinese books, stories, or practice Chinese characters",
+    "category": "Reading",
+    "points": 20,
+  "isRecurring": true,
+  "recurrencePattern": { "type": "daily", "interval": 1 },
+    "showInQuickTasks": true
+  },
+  {
+    "title": "Clean Your Room",
+    "description": "Organize and clean your bedroom thoroughly",
+    "category": "Cleaning",
+    "points": 30,
+  "isRecurring": true,
+  "recurrencePattern": { "type": "daily", "interval": 1 },
+    "showInQuickTasks": true
+  },
+  {
+    "title": "Organize School Supplies",
+    "description": "Keep your school bag and study area organized",
+    "category": "Organization",
+    "points": 15,
+  "isRecurring": true,
+  "recurrencePattern": { "type": "daily", "interval": 1 },
+    "showInQuickTasks": true
+  },
+  {
+    "title": "Exercise for 20 Minutes",
+    "description": "Do physical exercise, sports, or outdoor activities",
+    "category": "Exercise",
+    "points": 25,
+    "isRecurring": true,
+    "recurrencePattern": { "type": "daily", "interval": 1 },
+    "showInQuickTasks": true
+  },
+  {
+    "title": "Feed Pet",
+    "description": "Feed your pet and provide fresh water",
+    "category": "Pet Care",
+    "points": 10,
+    "isRecurring": false,
+    "recurrencePattern": { "type": "daily", "interval": 1 },
+    "showInQuickTasks": true
+  }
+]

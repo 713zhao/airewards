@@ -343,6 +343,77 @@ class RecurrencePattern {
   factory RecurrencePattern.fromJson(Map<String, dynamic> json) => _$RecurrencePatternFromJson(json);
   Map<String, dynamic> toJson() => _$RecurrencePatternToJson(this);
 
+  /// Create a RecurrencePattern from a generic map (useful for configs)
+  factory RecurrencePattern.fromMap(Map<String, dynamic> map) {
+    final typeStr = (map['type'] ?? 'daily') as String;
+    RecurrenceType type = RecurrenceType.daily;
+    switch (typeStr) {
+      case 'weekly':
+        type = RecurrenceType.weekly;
+        break;
+      case 'monthly':
+        type = RecurrenceType.monthly;
+        break;
+      case 'yearly':
+        type = RecurrenceType.yearly;
+        break;
+      default:
+        type = RecurrenceType.daily;
+    }
+
+    int interval = 1;
+    try {
+      if (map['interval'] is int) interval = map['interval'] as int;
+      else if (map['interval'] != null) interval = int.parse(map['interval'].toString());
+    } catch (_) {
+      interval = 1;
+    }
+
+    List<int> daysOfWeek = <int>[];
+    if (map['daysOfWeek'] is List) {
+      final rawDays = List<dynamic>.from(map['daysOfWeek'] as List);
+      daysOfWeek = rawDays
+          .map((value) {
+            if (value is num) {
+              final day = value.toInt();
+              return day == 0 ? 7 : day; // normalize 0 => Sunday (7)
+            }
+            if (value is String) {
+              final parsed = int.tryParse(value.trim());
+              if (parsed == null) return 0;
+              return parsed == 0 ? 7 : parsed;
+            }
+            return 0;
+          })
+          .where((day) => day >= 1 && day <= 7)
+          .toSet()
+          .toList()
+        ..sort();
+    }
+
+    int? dayOfMonth;
+    if (map['dayOfMonth'] != null) {
+      dayOfMonth = map['dayOfMonth'] is int ? map['dayOfMonth'] as int : int.tryParse(map['dayOfMonth'].toString());
+    }
+
+    DateTime? endDate;
+    if (map['endDate'] is String) {
+      try {
+        endDate = DateTime.parse(map['endDate'] as String);
+      } catch (_) {
+        endDate = null;
+      }
+    }
+
+    return RecurrencePattern(
+      type: type,
+      interval: interval,
+      daysOfWeek: daysOfWeek,
+      dayOfMonth: dayOfMonth,
+      endDate: endDate,
+    );
+  }
+
   /// Get next due date based on pattern
   DateTime getNextDueDate(DateTime lastDueDate) {
     switch (type) {

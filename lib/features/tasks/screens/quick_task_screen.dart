@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import '../../../core/services/task_service.dart';
+import '../../../core/services/auth_service.dart';
 import '../../../core/models/task_model.dart';
 
 class QuickTaskScreen extends StatefulWidget {
@@ -12,6 +13,8 @@ class QuickTaskScreen extends StatefulWidget {
 class _QuickTaskScreenState extends State<QuickTaskScreen> {
   final _titleController = TextEditingController();
   final TaskService _taskService = TaskService();
+  // Silence all debug prints in this screen
+  void print(Object? object) {}
   
   String _selectedCategory = 'General';
   int _selectedPoints = 10;
@@ -44,8 +47,13 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
     });
 
     try {
+      final currentUser = AuthService.currentUser;
+      if (currentUser == null) {
+        throw Exception('Not signed in');
+      }
+
       if (preset != null && preset.isRecurring) {
-        // Create recurring task with preset values
+        // For recurring presets: Create recurring task template AND immediate today's instance
         RecurrenceType recurrenceType;
         switch (preset.recurrenceType) {
           case 'Daily':
@@ -66,28 +74,43 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
           interval: 1,
         );
 
-        await _taskService.createTask(
+        // Create the recurring template task
+        final taskId = await _taskService.createTask(
           title: title,
           description: 'Daily recurring task',
           category: preset.category,
           pointValue: preset.points,
           recurrencePattern: recurrencePattern,
         );
+
+        // Immediately materialize today's instance as one-time task (non-recurring)
+  print('[QuickTaskScreen] Creating immediate history entry for recurring preset: $title');
+        await _taskService.addQuickTaskInstance(
+          templateId: taskId,
+          userId: currentUser.id,
+          date: DateTime.now(),
+        );
       } else {
         // Create regular quick task
-        await _taskService.createQuickTask(
+        final taskId = await _taskService.createQuickTask(
           title: title,
           category: preset?.category ?? _selectedCategory,
           pointValue: preset?.points ?? _selectedPoints,
+        );
+
+        // Materialize the new quick task into today's history so it shows up immediately
+        await _taskService.addQuickTaskInstance(
+          templateId: taskId,
+          userId: currentUser.id,
+          date: DateTime.now(),
         );
       }
 
       if (mounted) {
         Navigator.of(context).pop();
-        final taskType = preset?.isRecurring == true ? 'recurring task' : 'quick task';
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('$taskType "$title" created!'),
+            content: Text('Task "$title" added to today!'),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -113,29 +136,24 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
   }
 
   Future<void> _createTaskFromTemplate(TaskModel template) async {
-    // Always create a new instance for today (can be done multiple times)
+    // Add a quick-task instance for today using TaskService.addQuickTaskInstance
+    // Allows multiple instances per day now
     setState(() {
       _isLoading = true;
     });
 
     try {
-      print('🔄 Creating task from template: ${template.title}');
-      
-      final taskId = await _taskService.createTask(
-        title: template.title,
-        description: "${template.description}\n[Daily Task - ${DateTime.now().toString().split(' ')[0]}]",
-        category: "Daily Tasks", // Special category for daily tasks
-        pointValue: template.pointValue,
-        priority: template.priority,
-        showInQuickTasks: false, // Don't show the new instance in quick tasks
-        isRecurring: false, // Always create as non-recurring task
-        recurrencePattern: null, // No recurrence pattern
-        instructions: template.instructions,
-        dueDate: DateTime.now(), // Set due date to today
-        tags: ["daily-task", "quick-added"], // Special tags to identify daily tasks
+  print('[QuickTaskScreen] Adding quick-task instance from template: ${template.title}');
+      final currentUser = AuthService.currentUser;
+      if (currentUser == null) throw Exception('Not signed in');
+
+      final instanceId = await _taskService.addQuickTaskInstance(
+        templateId: template.id,
+        userId: currentUser.id,
+        date: DateTime.now(),
       );
 
-      print('✅ Task created successfully with ID: $taskId');
+  print('[QuickTaskScreen] Created task instance: $instanceId');
 
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -147,7 +165,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
         );
       }
     } catch (e) {
-      print('❌ Error creating task: $e');
+  print('[QuickTaskScreen][ERROR] Error adding quick-task instance: $e');
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
@@ -231,8 +249,8 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                   ),
                   const SizedBox(height: 12),
                   
-                  StreamBuilder<List<TaskModel>>(
-                    stream: _taskService.getAllMyTasks(),
+                  FutureBuilder<List<TaskModel>>(
+                    future: _taskService.listQuickTaskTemplates(),
                     builder: (context, snapshot) {
                       if (snapshot.connectionState == ConnectionState.waiting) {
                         return const Center(child: CircularProgressIndicator());
@@ -244,12 +262,8 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                         );
                       }
 
-                      final allTasks = snapshot.data ?? [];
-                      
-                      // Show only tasks marked as Quick Tasks for quick creation
-                      final quickTaskTemplates = allTasks.where((task) => 
-                        task.showInQuickTasks
-                      ).toList();
+                      final quickTaskTemplates = snapshot.data ?? [];
+                      print('[QuickTaskScreen] Found ${quickTaskTemplates.length} quick task templates');
 
                       if (quickTaskTemplates.isEmpty) {
                         return Container(

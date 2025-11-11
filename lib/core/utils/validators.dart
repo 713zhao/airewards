@@ -22,11 +22,11 @@ class Validators {
   /// Validate email address
   static Either<ValidationFailure, String> validateEmail(String email) {
     if (email.isEmpty) {
-      return const Either.left(ValidationFailure('Email is required'));
+      return Either.left(ValidationFailure('Email is required'));
     }
     
     if (!_emailRegex.hasMatch(email.trim())) {
-      return const Either.left(ValidationFailure.invalidEmail());
+      return Either.left(ValidationFailure.invalidEmail());
     }
     
     return Either.right(email.trim());
@@ -35,15 +35,15 @@ class Validators {
   /// Validate password
   static Either<ValidationFailure, String> validatePassword(String password) {
     if (password.isEmpty) {
-      return const Either.left(ValidationFailure('Password is required'));
+      return Either.left(ValidationFailure('Password is required'));
     }
     
     if (password.length < 6) {
-      return const Either.left(ValidationFailure('Password must be at least 6 characters'));
+      return Either.left(ValidationFailure('Password must be at least 6 characters'));
     }
     
     if (!_passwordRegex.hasMatch(password)) {
-      return const Either.left(ValidationFailure('Password must contain at least one letter and one number'));
+      return Either.left(ValidationFailure('Password must contain at least one letter and one number'));
     }
     
     return Either.right(password);
@@ -52,13 +52,13 @@ class Validators {
   /// Validate phone number
   static Either<ValidationFailure, String> validatePhoneNumber(String phoneNumber) {
     if (phoneNumber.isEmpty) {
-      return const Either.left(ValidationFailure('Phone number is required'));
+      return Either.left(ValidationFailure('Phone number is required'));
     }
     
     final cleanNumber = phoneNumber.replaceAll(RegExp(r'[^\d+]'), '');
     
     if (!_phoneRegex.hasMatch(cleanNumber)) {
-      return const Either.left(ValidationFailure.invalidPhoneNumber());
+      return Either.left(ValidationFailure.invalidPhoneNumber());
     }
     
     return Either.right(cleanNumber);
@@ -136,17 +136,17 @@ class Validators {
   /// Validate URL
   static Either<ValidationFailure, String> validateUrl(String url) {
     if (url.isEmpty) {
-      return const Either.left(ValidationFailure('URL is required'));
+      return Either.left(ValidationFailure('URL is required'));
     }
     
     try {
       final uri = Uri.parse(url);
       if (!uri.hasScheme || (uri.scheme != 'http' && uri.scheme != 'https')) {
-        return const Either.left(ValidationFailure('URL must start with http:// or https://'));
+        return Either.left(ValidationFailure('URL must start with http:// or https://'));
       }
       return Either.right(url);
     } catch (e) {
-      return const Either.left(ValidationFailure('Invalid URL format'));
+      return Either.left(ValidationFailure('Invalid URL format'));
     }
   }
 

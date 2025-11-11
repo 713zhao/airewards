@@ -50,7 +50,9 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
     if (widget.task != null) {
       _selectedPriority = widget.task!.priority;
       _selectedCategory = widget.task!.category;
-      _selectedRecurrence = widget.task!.recurrencePattern?.type;
+      _selectedRecurrence = widget.task!.isRecurring
+          ? widget.task!.recurrencePattern?.type
+          : null;
       _selectedDueDate = widget.task!.dueDate;
       _showInQuickTasks = widget.task!.showInQuickTasks;
     }

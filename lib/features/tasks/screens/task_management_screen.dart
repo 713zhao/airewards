@@ -16,6 +16,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
     with TickerProviderStateMixin {
   final TaskService _taskService = getIt<TaskService>();
   late TabController _tabController;
+  late final Stream<List<TaskModel>> _tasksStream;
   
   final List<String> _categories = [
     'All',
@@ -26,6 +27,9 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
   void initState() {
     super.initState();
     _tabController = TabController(length: _categories.length, vsync: this);
+    // Convert to broadcast so multiple tabs can listen without throwing.
+    _tasksStream =
+        _taskService.getFamilyTasks(includeCompleted: true).asBroadcastStream();
   }
 
   @override
@@ -65,7 +69,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
 
   Widget _buildCategoryView(String category) {
     return StreamBuilder<List<TaskModel>>(
-      stream: _taskService.getFamilyTasks(includeCompleted: true),
+      stream: _tasksStream,
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Center(child: CircularProgressIndicator());
@@ -293,7 +297,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
                     theme.colorScheme.tertiaryContainer,
                     theme.colorScheme.onTertiaryContainer,
                   ),
-                  if (task.recurrencePattern != null) ...[
+                  if (task.isRecurring && task.recurrencePattern != null) ...[
                     const SizedBox(width: 8),
                     _buildInfoChip(
                       Icons.repeat,
@@ -454,7 +458,7 @@ class _TaskManagementScreenState extends State<TaskManagementScreen>
             _buildDetailRow('Category', task.category),
             _buildDetailRow('Priority', _getPriorityText(task.priority)),
             _buildDetailRow('Points', '${task.pointValue}'),
-            if (task.recurrencePattern != null)
+            if (task.isRecurring && task.recurrencePattern != null)
               _buildDetailRow('Recurrence', _getRecurrenceText(task.recurrencePattern!.type)),
             if (task.dueDate != null)
               _buildDetailRow('Due Date', _formatDueDate(task.dueDate!)),

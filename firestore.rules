@@ -2,55 +2,99 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    // Users can read/write their own user document
-    match /users/{userId} {
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+    // Helper function to check if user is a parent in any family
+    function isParentInFamily(userId) {
+      return exists(/databases/$(database)/documents/users/$(userId)) 
+        && get(/databases/$(database)/documents/users/$(userId)).data.accountType == 'parent';
     }
     
-    // Tasks collection - users can manage tasks in their family
-    match /tasks/{taskId} {
-      allow read, write: if request.auth != null 
-        && (
-          // User can access tasks assigned to them
-          resource.data.assignedToUserId == request.auth.uid
-          // Or tasks in their family (using userId as familyId for now)
-          || resource.data.familyId == request.auth.uid
-        );
+    // Helper function to check if user belongs to the same family
+    function isInSameFamily(userId1, userId2) {
+      let user1 = get(/databases/$(database)/documents/users/$(userId1)).data;
+      let user2 = get(/databases/$(database)/documents/users/$(userId2)).data;
+      return user1.familyId != null && user1.familyId == user2.familyId;
+    }
+    
+    // Users collection - Enhanced family access
+    match /users/{userId} {
+      // Users can always read/write their own document
+      allow read, write: if request.auth != null && request.auth.uid == userId;
       
+      // Parents can read their children's user documents
+      allow read: if request.auth != null 
+        && isParentInFamily(request.auth.uid)
+        && isInSameFamily(request.auth.uid, userId);
+      
+      // Allow reading any user document for family functionality
+      // (In production, you might want to restrict this more)
+      allow read: if request.auth != null;
+    }
+    
+    // Tasks collection - Enhanced family task management
+    match /tasks/{taskId} {
+      // Allow reading tasks assigned to the user or anyone in the same family
+      allow read: if request.auth != null
+        && (
+          resource.data.assignedToUserId == request.auth.uid
+          || isInSameFamily(request.auth.uid, resource.data.assignedToUserId)
+        );
+
+      // Allow updates/deletes when user manages their own tasks or a parent manages family tasks
+      allow update, delete: if request.auth != null
+        && (
+          resource.data.assignedToUserId == request.auth.uid
+          || (isParentInFamily(request.auth.uid)
+              && isInSameFamily(request.auth.uid, resource.data.assignedToUserId))
+        );
+
       // Allow creating new tasks
       allow create: if request.auth != null
         && (
-          // User can create tasks for themselves
           request.resource.data.assignedToUserId == request.auth.uid
-          // Or tasks in their family
-          || request.resource.data.familyId == request.auth.uid
+          || (isParentInFamily(request.auth.uid)
+              && isInSameFamily(request.auth.uid, request.resource.data.assignedToUserId))
         );
     }
     
-    // Families collection - users can read/write their own family data
+    // Families collection - Enhanced family access
     match /families/{familyId} {
       allow read, write: if request.auth != null 
         && (
-          // Family owner
-          resource.data.ownerId == request.auth.uid
+          // Family admin/parent
+          resource.data.adminUserId == request.auth.uid
           // Or family member
           || request.auth.uid in resource.data.memberIds
+          // Backward compatibility with ownerId
+          || resource.data.ownerId == request.auth.uid
         );
+      
+      // Allow creating families
+      allow create: if request.auth != null;
     }
     
-    // Rewards collection - users can read rewards, family owners can write
+    // Rewards collection - Enhanced family reward access
     match /rewards/{rewardId} {
       allow read: if request.auth != null;
       allow write: if request.auth != null 
-        && resource.data.familyId == request.auth.uid;
+        && (
+          // Family admin can write
+          resource.data.familyId == request.auth.uid
+          // Or user is a parent in the family
+          || isParentInFamily(request.auth.uid)
+        );
     }
     
-    // Transactions collection - users can read/write their own transactions
+    // Transactions collection - Enhanced family transaction access
     match /transactions/{transactionId} {
       allow read, write: if request.auth != null 
         && (
+          // User can access their own transactions
           resource.data.userId == request.auth.uid
+          // Or family admin can access family transactions
           || resource.data.familyId == request.auth.uid
+          // Or parent can access their children's transactions
+          || (isParentInFamily(request.auth.uid) 
+              && isInSameFamily(request.auth.uid, resource.data.userId))
         );
     }
     
@@ -59,9 +103,9 @@ service cloud.firestore {
       allow read, write: if request.auth != null;
     }
     
-    // Default deny all other documents
+    // Allow broader access for development (restrict in production)
     match /{document=**} {
-      allow read, write: if false;
+      allow read, write: if request.auth != null;
     }
   }
 }

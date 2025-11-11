@@ -2,11 +2,18 @@ import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/reward_item.dart';
+import '../models/user_model.dart';
+import '../services/auth_service.dart';
+import '../services/family_service.dart';
+import '../injection/injection.dart';
 
 class RewardService {
   static final RewardService _instance = RewardService._internal();
   factory RewardService() => _instance;
   RewardService._internal();
+
+  // Suppress all print statements in this class
+  void print(Object? object) {}
 
   static const String _rewardsKey = 'rewards_data';
   
@@ -15,6 +22,20 @@ class RewardService {
 
   ValueNotifier<List<RewardItem>> get rewardsStream => _rewardsNotifier;
   List<RewardItem> get rewards => List.unmodifiable(_rewards);
+
+  /// Check if current user can manage rewards
+  bool canManageRewards() {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) return false;
+    
+    try {
+      final familyService = getIt<FamilyService>();
+      return familyService.canManageRewards(currentUser);
+    } catch (e) {
+      // Fallback to checking account type directly
+      return currentUser.hasManagementPermissions;
+    }
+  }
 
   Future<void> initialize() async {
     await _loadRewards();
@@ -126,6 +147,10 @@ class RewardService {
   }
 
   Future<String> addReward(RewardItem reward) async {
+    if (!canManageRewards()) {
+      throw Exception('Insufficient permissions to add rewards');
+    }
+    
     final newReward = reward.copyWith(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       createdAt: DateTime.now(),
@@ -137,6 +162,10 @@ class RewardService {
   }
 
   Future<void> updateReward(RewardItem updatedReward) async {
+    if (!canManageRewards()) {
+      throw Exception('Insufficient permissions to update rewards');
+    }
+    
     final index = _rewards.indexWhere((r) => r.id == updatedReward.id);
     if (index != -1) {
       _rewards[index] = updatedReward.copyWith(
@@ -147,11 +176,19 @@ class RewardService {
   }
 
   Future<void> deleteReward(String id) async {
+    if (!canManageRewards()) {
+      throw Exception('Insufficient permissions to delete rewards');
+    }
+    
     _rewards.removeWhere((r) => r.id == id);
     await _saveRewards();
   }
 
   Future<void> toggleRewardStatus(String id) async {
+    if (!canManageRewards()) {
+      throw Exception('Insufficient permissions to modify rewards');
+    }
+    
     final index = _rewards.indexWhere((r) => r.id == id);
     if (index != -1) {
       _rewards[index] = _rewards[index].copyWith(

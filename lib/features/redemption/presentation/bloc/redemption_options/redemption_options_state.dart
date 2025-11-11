@@ -1,5 +1,4 @@
 import 'package:equatable/equatable.dart';
-import '../../../domain/entities/entities.dart';
 import '../../../domain/usecases/get_redemption_options.dart';
 
 // Sentinel object for copyWith to distinguish between null and unset

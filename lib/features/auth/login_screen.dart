@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/models/user_model.dart';
+import '../../core/models/account_type.dart';
 import '../../core/theme/theme_extensions.dart';
 import '../main/main_app_screen.dart';
 
@@ -23,6 +24,10 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _isSignUp = false;
   bool _obscurePassword = true;
   String? _errorMessage;
+  AccountType _selectedAccountType = AccountType.parent;
+
+  // Local print override: silence all verbose prints in this screen
+  void print(Object? object) {}
 
   @override
   void initState() {
@@ -158,6 +163,59 @@ class _LoginScreenState extends State<LoginScreen> {
                     }
                     return null;
                   },
+                ),
+                const SizedBox(height: 16),
+                
+                // Account type selection
+                Card(
+                  color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+                  child: Padding(
+                    padding: const EdgeInsets.all(16),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          'Account Type',
+                          style: Theme.of(context).textTheme.titleSmall?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        Row(
+                          children: [
+                            Expanded(
+                              child: RadioListTile<AccountType>(
+                                value: AccountType.parent,
+                                groupValue: _selectedAccountType,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedAccountType = value!;
+                                  });
+                                },
+                                title: const Text('Parent'),
+                                subtitle: const Text('Full management access'),
+                                dense: true,
+                              ),
+                            ),
+                            Expanded(
+                              child: RadioListTile<AccountType>(
+                                value: AccountType.child,
+                                groupValue: _selectedAccountType,
+                                onChanged: (value) {
+                                  setState(() {
+                                    _selectedAccountType = value!;
+                                  });
+                                },
+                                title: const Text('Child'),
+                                subtitle: const Text('Complete tasks & earn rewards'),
+                                dense: true,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ],
+                    ),
+                  ),
                 ),
                 const SizedBox(height: 16),
               ],
@@ -340,6 +398,7 @@ class _LoginScreenState extends State<LoginScreen> {
           email: _emailController.text.trim(),
           password: _passwordController.text,
           displayName: _nameController.text.trim(),
+          accountType: _selectedAccountType,
         );
       } else {
         user = await AuthService.signInWithEmail(
