@@ -47,6 +47,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
 
   Stream<List<TaskModel>>? _tasksStream;
   StreamSubscription<List<TaskModel>>? _allTasksSubscription;
+  StreamSubscription<UserModel?>? _userSubscription; // reacts when auth user loads
   List<TaskModel> _allMyTasks = [];
 
   int _currentIndex = 0;
@@ -74,6 +75,14 @@ class _MainAppScreenState extends State<MainAppScreen> {
         }
       }
       _allMyTasks = tasks;
+      _recalculatePointsFromLiveTasks();
+    });
+    // When auth user becomes available (async init), load points
+    _userSubscription = AuthService.userStream.listen((user) {
+      if (user != null) {
+        print('👂 Auth user stream -> user loaded (${user.id}), triggering points/stat refresh');
+        _loadUserPoints();
+      }
     });
     _initializeRewardService();
     _refreshRewardSummaries();
@@ -168,6 +177,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
   @override
   void dispose() {
     _allTasksSubscription?.cancel();
+    _userSubscription?.cancel();
     super.dispose();
   }
 
@@ -195,6 +205,9 @@ class _MainAppScreenState extends State<MainAppScreen> {
       final netPoints = await _taskService.getNetPointsFromHistory(
         userId: userId,
       );
+      // If history based total is 0 but we have completed/approved tasks in live memory, use live fallback
+      final liveFallback = _computeLiveNetPoints();
+      final effectivePoints = (netPoints == 0 && liveFallback != 0) ? liveFallback : netPoints;
 
       print('📊 Loading task stats...');
       TaskStats? taskStats;
@@ -222,19 +235,19 @@ class _MainAppScreenState extends State<MainAppScreen> {
         tasksDone = fallbackTasks;
       }
 
-      final rewards = _rewardService.getAvailableRewards(netPoints);
+  final rewards = _rewardService.getAvailableRewards(effectivePoints);
       print('🎁 Rewards loaded: ${rewards.length} available');
 
       if (mounted) {
         setState(() {
-          _currentPoints = netPoints;
+          _currentPoints = effectivePoints;
           _totalTasksDone = tasksDone;
           _totalRewards = redemptionHistory.length;
         });
       }
 
       print(
-        '✅ Top section stats updated: $netPoints points, $tasksDone tasks, ${redemptionHistory.length} rewards redeemed',
+        '✅ Top section stats updated: $effectivePoints points (history=$netPoints live=$liveFallback), $tasksDone tasks, ${redemptionHistory.length} rewards redeemed',
       );
     } catch (e) {
       print('❌ Error in _loadProfileStats: $e');
@@ -245,6 +258,27 @@ class _MainAppScreenState extends State<MainAppScreen> {
           _totalRewards = 0;
         });
       }
+    }
+  }
+
+  // Compute net points (completed + approved, including negative redemption entries) from current live tasks list
+  int _computeLiveNetPoints() {
+    if (_allMyTasks.isEmpty) return 0;
+    var total = 0;
+    for (final t in _allMyTasks) {
+      if (t.status == TaskStatus.completed || t.status == TaskStatus.approved) {
+        total += t.pointValue; // negative values reduce total automatically
+      }
+    }
+    return total;
+  }
+
+  void _recalculatePointsFromLiveTasks() {
+    final live = _computeLiveNetPoints();
+    if (!mounted) return;
+    if (live != _currentPoints) {
+      setState(() => _currentPoints = live);
+      print('🔄 Live points updated from tasks stream: $live');
     }
   }
 

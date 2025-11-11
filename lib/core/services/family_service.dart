@@ -616,7 +616,6 @@ class FamilyService extends ChangeNotifier {
       debugPrint('🗑️ Deleting family: $familyId');
 
       // 1) Find all users with this familyId and clear their familyId
-      final userService = getIt<UserService>();
       final usersQuery = await FirebaseFirestore.instance
           .collection('users')
           .where('familyId', isEqualTo: familyId)
@@ -625,15 +624,12 @@ class FamilyService extends ChangeNotifier {
       for (final userDoc in usersQuery.docs) {
         try {
           final uid = userDoc.id;
-          final user = await userService.getUser(uid);
-          if (user != null) {
-            await userService.updateUser(user.copyWith(familyId: null));
-            debugPrint('🔧 Cleared familyId for user: $uid');
-          } else {
-            // Fallback: direct update if user model not available
-            await FirebaseFirestore.instance.collection('users').doc(uid).update({'familyId': null}).catchError((_) {});
-            debugPrint('🔧 Cleared familyId (direct) for user: $uid');
-          }
+          // Use FieldValue.delete() to properly remove the familyId field from Firestore
+          await FirebaseFirestore.instance
+              .collection('users')
+              .doc(uid)
+              .update({'familyId': FieldValue.delete()});
+          debugPrint('🔧 Cleared familyId for user: $uid');
         } catch (e) {
           debugPrint('⚠️ Failed to clear familyId for user ${userDoc.id}: $e');
         }

@@ -292,7 +292,26 @@ class _FamilyManagementScreenState extends State<FamilyManagementScreen> {
       // Reflect removal in in-memory auth user immediately so Family tab updates
       final user = AuthService.currentUser;
       if (user != null && user.familyId != null) {
-        AuthService.updateCurrentUser(user.copyWith(familyId: null));
+        // Create a new user model with familyId explicitly set to empty string
+        // (copyWith with null won't work due to null-coalescing operator)
+        final updatedUser = UserModel(
+          id: user.id,
+          email: user.email,
+          displayName: user.displayName,
+          photoUrl: user.photoUrl,
+          role: user.role,
+          accountType: user.accountType,
+          familyId: null, // Explicitly clear the familyId
+          currentPoints: user.currentPoints,
+          totalPointsEarned: user.totalPointsEarned,
+          totalPointsSpent: user.totalPointsSpent,
+          createdAt: user.createdAt,
+          lastLoginAt: user.lastLoginAt,
+          preferences: user.preferences,
+          achievements: user.achievements,
+          isActive: user.isActive,
+        );
+        AuthService.updateCurrentUser(updatedUser);
       }
 
       setState(() {
