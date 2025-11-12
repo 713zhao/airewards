@@ -47,19 +47,19 @@ class _JoinFamilyScreenState extends State<JoinFamilyScreen> {
         throw Exception('User not authenticated');
       }
 
-      final success = await _familyService.joinFamilyWithCode(
+      final joinedFamilyId = await _familyService.joinFamilyWithCode(
         invitationCode: code,
         userId: currentUser.id,
       );
 
-      if (success) {
+      if (joinedFamilyId != null) {
         // Assign existing family tasks to the new child
         try {
           print('🎯 Assigning existing tasks to new family member...');
           final taskService = TaskService();
           await taskService.assignExistingTasksToNewChild(
             childUserId: currentUser.id,
-            familyId: currentUser.familyId ?? '',
+            familyId: joinedFamilyId, // Use the familyId that was just joined
           );
           print('✅ Tasks assigned successfully');
         } catch (e) {

@@ -5,9 +5,6 @@ import '../models/task_model.dart';
 class TaskGenerationService {
   static FirebaseFirestore? _testFirestore;
 
-  // Local print override: silence all verbose prints in this service
-  void print(Object? object) {}
-
   static void injectDependencies({FirebaseFirestore? firestore}) {
     _testFirestore = firestore;
   }

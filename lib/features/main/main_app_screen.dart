@@ -91,56 +91,17 @@ class _MainAppScreenState extends State<MainAppScreen> {
 
   // Create a merged stream for the Tasks tab: live tasks + today's generated history
   Stream<List<TaskModel>> _createTasksStreamForDate(DateTime date) {
-    final live = _taskService.getAllMyTasks();
     final isToday = DateTime.now().year == date.year && DateTime.now().month == date.month && DateTime.now().day == date.day;
 
-    if (!isToday) {
-      return live;
+    // For today, show ONLY task_history (generated tasks for the user)
+    // This ensures child users see only their materialized task instances
+    if (isToday) {
+      return _taskService.getTodayHistoryForCurrentUser();
     }
 
-    final controller = StreamController<List<TaskModel>>.broadcast();
-    List<TaskModel> liveLatest = const [];
-    List<TaskModel> historyLatest = const [];
-
-    void emit() {
-      // Build a merged list, but avoid showing the parent recurring template
-      // when a generated instance (history task) for today already exists.
-      final historyTitles = historyLatest.map((h) => h.title).toSet();
-      final filteredLive = liveLatest.where((t) {
-        final isTemplate = t.isRecurring && t.recurrencePattern != null;
-        final noDueDateOrFuture = t.dueDate == null || t.dueDate!.isAfter(DateTime.now());
-        if (isTemplate && noDueDateOrFuture && historyTitles.contains(t.title)) {
-          // Suppress template so only today's materialized instance shows.
-          return false;
-        }
-        return true;
-      }).toList();
-
-      final map = <String, TaskModel>{};
-      for (final t in [...filteredLive, ...historyLatest]) {
-        map[t.id] = t;
-      }
-      final merged = map.values.toList();
-      controller.add(merged);
-    }
-
-    final sub1 = live.listen((v) {
-      liveLatest = v;
-      emit();
-    }, onError: controller.addError);
-
-    final history = _taskService.getTodayHistoryForCurrentUser();
-    final sub2 = history.listen((v) {
-      historyLatest = v;
-      emit();
-    }, onError: controller.addError);
-
-    controller.onCancel = () {
-      sub1.cancel();
-      sub2.cancel();
-    };
-
-    return controller.stream;
+    // For past dates, also show task_history
+    // In the future, we might want to support viewing history for any date
+    return _taskService.getTodayHistoryForCurrentUser();
   }
 
   Future<void> _refreshRewardSummaries() async {

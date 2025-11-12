@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import '../models/user_model.dart';
 import '../models/account_type.dart';
 import '../services/user_service.dart';
+import '../services/task_generation_service.dart';
 import '../injection/injection.dart';
 
 /// Authentication service handling Firebase Auth integration
@@ -374,6 +375,25 @@ class AuthService {
       
       _currentUser = user;
       _userController.add(user);
+
+      // If this is a child account, trigger task generation for today (blocking).
+      // Wait for generation to complete so UI shows tasks immediately.
+      try {
+        if (user.accountType == AccountType.child) {
+          final uid = user.id;
+          debugPrint('🔁 Starting task generation for user $uid...');
+          final generated = await TaskGenerationService()
+              .generateTasksForUserForDate(
+                userId: uid, 
+                date: DateTime.now(), 
+                familyId: user.familyId
+              );
+          debugPrint('✅ Task generation complete for user $uid: ${generated.length} items');
+        }
+      } catch (e) {
+        debugPrint('⚠️ Task generation failed for user ${user.id}: $e');
+        // Don't block login on generation failure
+      }
       
       // Initialize family relationships if user has a familyId
       // TEMPORARILY DISABLED TO STOP AUTO-CREATION LOOP

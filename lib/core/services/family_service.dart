@@ -24,9 +24,6 @@ class FamilyService extends ChangeNotifier {
   Family? _currentFamily;
   List<Family> _families = [];
   bool _initialized = false;
-
-  // Local print override: silence all verbose prints in this service
-  void print(Object? object) {}
   
   /// Current family for the logged-in user
   Family? get currentFamily => _currentFamily;
@@ -609,21 +606,24 @@ class FamilyService extends ChangeNotifier {
   /// This will:
   /// - Remove the `familyId` reference from all user documents belonging to the family
   /// - Delete tasks, task_history (templates), and rewards belonging to the family
+  /// - Delete task generation markers for all family members
   /// - Delete the family document
   /// - Remove local cached family data
   Future<bool> deleteFamily(String familyId) async {
     try {
       debugPrint('🗑️ Deleting family: $familyId');
 
-      // 1) Find all users with this familyId and clear their familyId
+      // 1) Find all users with this familyId and collect their IDs
       final usersQuery = await FirebaseFirestore.instance
           .collection('users')
           .where('familyId', isEqualTo: familyId)
           .get();
 
+      final List<String> memberIds = [];
       for (final userDoc in usersQuery.docs) {
         try {
           final uid = userDoc.id;
+          memberIds.add(uid);
           // Use FieldValue.delete() to properly remove the familyId field from Firestore
           await FirebaseFirestore.instance
               .collection('users')
@@ -635,8 +635,49 @@ class FamilyService extends ChangeNotifier {
         }
       }
 
-      // 2) Delete family-scoped collections (tasks, task_history, rewards) using paging
+      // 2) Delete task generation markers for all family members
+      if (memberIds.isNotEmpty) {
+        try {
+          debugPrint('🧹 Deleting task generation markers for ${memberIds.length} family members');
+          int markerCount = 0;
+          
+          // Query markers for each user individually to avoid loading all markers
+          for (final userId in memberIds) {
+            try {
+              final userMarkersQuery = await FirebaseFirestore.instance
+                  .collection('task_generation_markers')
+                  .where('userId', isEqualTo: userId)
+                  .get();
+              
+              if (userMarkersQuery.docs.isNotEmpty) {
+                final batch = FirebaseFirestore.instance.batch();
+                for (final markerDoc in userMarkersQuery.docs) {
+                  batch.delete(markerDoc.reference);
+                  markerCount++;
+                }
+                await batch.commit();
+                debugPrint('  🗑️ Deleted ${userMarkersQuery.docs.length} markers for user: $userId');
+              }
+            } catch (userMarkerError) {
+              debugPrint('⚠️ Failed to delete markers for user $userId: $userMarkerError');
+            }
+          }
+          
+          if (markerCount > 0) {
+            debugPrint('✅ Deleted total $markerCount task generation markers for all family members');
+          } else {
+            debugPrint('ℹ️ No task generation markers found for family members');
+          }
+        } catch (e) {
+          debugPrint('⚠️ Failed to delete task generation markers: $e');
+          // Continue with deletion even if marker cleanup fails
+        }
+      }
+
+      // 3) Delete family-scoped collections (tasks, task_history, rewards) using paging
       Future<void> _pagedDelete(String collection, {int batchSize = 300}) async {
+        debugPrint('🔍 Deleting from collection: $collection (familyId: $familyId)');
+        int totalDeleted = 0;
         while (true) {
           final snap = await FirebaseFirestore.instance
               .collection(collection)
@@ -644,23 +685,30 @@ class FamilyService extends ChangeNotifier {
               .limit(batchSize)
               .get();
           if (snap.docs.isEmpty) break;
+          
+          debugPrint('  🗑️ Deleting ${snap.docs.length} documents from $collection');
           final batch = FirebaseFirestore.instance.batch();
-          for (final d in snap.docs) batch.delete(d.reference);
+          for (final d in snap.docs) {
+            batch.delete(d.reference);
+            totalDeleted++;
+          }
           await batch.commit();
         }
+        debugPrint('✅ Deleted $totalDeleted total documents from $collection');
       }
 
+      debugPrint('🗑️ Starting deletion of family-scoped collections...');
       await _pagedDelete('tasks');
       await _pagedDelete('task_history');
       await _pagedDelete('redemptions');
       await _pagedDelete('rewards');
 
-      // 3) Delete the family document
+      // 4) Delete the family document
       await FirebaseFirestore.instance.collection('families').doc(familyId).delete().catchError((e) {
         debugPrint('⚠️ Deleting family doc error: $e');
       });
 
-      // 4) Remove from local cache
+      // 5) Remove from local cache
       _families.removeWhere((f) => f.id == familyId);
       if (_currentFamily?.id == familyId) {
         _currentFamily = null;
@@ -758,22 +806,24 @@ class FamilyService extends ChangeNotifier {
   }
 
   /// Join family using invitation code
-  Future<bool> joinFamilyWithCode({
+  /// Returns the familyId if successful, null otherwise
+  Future<String?> joinFamilyWithCode({
     required String invitationCode,
     required String userId,
   }) async {
     // Simple code validation - in production, this would involve server validation
     try {
       final parts = invitationCode.toLowerCase().split('-');
-      if (parts.isEmpty) return false;
+      if (parts.isEmpty) return null;
       
       // Find family (simplified - in production, use proper invitation system)
       final family = _families.firstWhere((f) => f.id.startsWith(parts.first), orElse: () => throw Exception());
       
-      return await addChildToFamily(childId: userId, familyId: family.id);
+      final success = await addChildToFamily(childId: userId, familyId: family.id);
+      return success ? family.id : null;
     } catch (e) {
       debugPrint('Invalid invitation code: $e');
-      return false;
+      return null;
     }
   }
 

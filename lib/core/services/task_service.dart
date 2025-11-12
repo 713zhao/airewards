@@ -1365,66 +1365,25 @@ class TaskService {
     required String familyId,
   }) async {
     try {
-      print('🎯 Assigning existing tasks to new child: $childUserId');
+      print('🎯 Generating tasks for new child: $childUserId');
       
-      // Get all template tasks (tasks not assigned to specific users or assigned to parent for duplication)
-      final templateTasksQuery = await _firestore
-          .collection(_collection)
-          .where('familyId', isEqualTo: familyId)
-          .where('isRecurring', isEqualTo: true)  // Recurring tasks should be assigned to new children
-          .get();
+      // Clear any existing generation marker so we can regenerate with the new familyId
+      final generationService = TaskGenerationService();
+      await generationService.clearGenerationMarker(
+        userId: childUserId,
+        date: DateTime.now(),
+      );
       
-      print('📋 Found ${templateTasksQuery.docs.length} recurring tasks to assign');
+      // Use TaskGenerationService to materialize templates into task_history
+      final generated = await generationService.generateTasksForUserForDate(
+        userId: childUserId,
+        date: DateTime.now(),
+        familyId: familyId,
+      );
       
-      final batch = _firestore.batch();
-      int assignedCount = 0;
-      
-      for (final doc in templateTasksQuery.docs) {
-        try {
-          final task = TaskModel.fromFirestore(doc);
-          
-          // Skip if task is already completed or assigned to this child
-          if (task.assignedToUserId == childUserId || task.isCompleted) {
-            continue;
-          }
-          
-          // Create a new task instance for this child
-          final newTaskId = _firestore.collection(_collection).doc().id;
-          final newTask = TaskModel.create(
-            id: newTaskId,
-            title: task.title,
-            description: task.description,
-            category: task.category,
-            pointValue: task.pointValue,
-            assignedToUserId: childUserId,
-            assignedByUserId: task.assignedByUserId,
-            familyId: familyId,
-            priority: task.priority,
-            dueDate: task.dueDate,
-            tags: task.tags,
-            isRecurring: task.isRecurring,
-            recurrencePattern: task.recurrencePattern,
-            instructions: task.instructions,
-            showInQuickTasks: task.showInQuickTasks,
-          );
-          
-          batch.set(_firestore.collection(_collection).doc(newTaskId), newTask.toFirestore());
-          assignedCount++;
-          
-          print('  ✅ Assigned task: ${task.title}');
-        } catch (e) {
-          print('  ❌ Error processing task ${doc.id}: $e');
-        }
-      }
-      
-      if (assignedCount > 0) {
-        await batch.commit();
-        print('🎉 Successfully assigned $assignedCount tasks to child $childUserId');
-      } else {
-        print('ℹ️ No tasks to assign to child $childUserId');
-      }
+      print('✅ Generated ${generated.length} tasks in task_history for child $childUserId');
     } catch (e) {
-      print('❌ Error assigning tasks to new child: $e');
+      print('❌ Error generating tasks for new child: $e');
     }
   }
 
