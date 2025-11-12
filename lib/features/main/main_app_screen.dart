@@ -617,87 +617,93 @@ class _MainAppScreenState extends State<MainAppScreen> {
   }
 
   Widget _buildFamilyActivity() {
-    final currentUser = AuthService.currentUser;
-    final isInFamily = currentUser?.familyId != null;
+    return StreamBuilder<UserModel?>(
+      stream: AuthService.userStream,
+      initialData: AuthService.currentUser,
+      builder: (context, userSnapshot) {
+        final currentUser = userSnapshot.data;
+        final isInFamily = currentUser?.familyId != null;
 
-    if (!isInFamily) {
-      return _buildPersonalProgressCard();
-    }
+        if (!isInFamily) {
+          return _buildPersonalProgressCard();
+        }
 
-    return FutureBuilder<List<Map<String, dynamic>>>(
-      future: _loadFamilyMembersData(),
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return Card(
-            child: Padding(
-              padding: const EdgeInsets.all(20),
-              child: Column(
-                children: [
-                  const CircularProgressIndicator(),
-                  const SizedBox(height: 16),
-                  Text(
-                    'Loading family data...',
-                    style: Theme.of(context).textTheme.bodyMedium,
+        return FutureBuilder<List<Map<String, dynamic>>>(
+          future: _loadFamilyMembersData(),
+          builder: (context, snapshot) {
+            if (snapshot.connectionState == ConnectionState.waiting) {
+              return Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(20),
+                  child: Column(
+                    children: [
+                      const CircularProgressIndicator(),
+                      const SizedBox(height: 16),
+                      Text(
+                        'Loading family data...',
+                        style: Theme.of(context).textTheme.bodyMedium,
+                      ),
+                    ],
                   ),
-                ],
-              ),
-            ),
-          );
-        }
+                ),
+              );
+            }
 
-        if (snapshot.hasError) {
-          print('Error loading family data: ${snapshot.error}');
-          return _buildPersonalProgressCard();
-        }
+            if (snapshot.hasError) {
+              print('Error loading family data: ${snapshot.error}');
+              return _buildPersonalProgressCard();
+            }
 
-        final members = snapshot.data ?? [];
+            final members = snapshot.data ?? [];
 
-        if (members.isEmpty) {
-          return _buildPersonalProgressCard();
-        }
+            if (members.isEmpty) {
+              return _buildPersonalProgressCard();
+            }
 
-        members.sort((a, b) {
-          final aPoints = a['todayPointsEarned'] as int? ?? 0;
-          final bPoints = b['todayPointsEarned'] as int? ?? 0;
-          return bPoints.compareTo(aPoints);
-        });
+            members.sort((a, b) {
+              final aPoints = a['todayPointsEarned'] as int? ?? 0;
+              final bPoints = b['todayPointsEarned'] as int? ?? 0;
+              return bPoints.compareTo(aPoints);
+            });
 
-        return Card(
-          child: Padding(
-            padding: const EdgeInsets.all(16),
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Row(
+            return Card(
+              child: Padding(
+                padding: const EdgeInsets.all(16),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Icon(
-                      Icons.groups,
-                      color: Theme.of(context).colorScheme.primary,
+                    Row(
+                      children: [
+                        Icon(
+                          Icons.groups,
+                          color: Theme.of(context).colorScheme.primary,
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          'Family Progress',
+                          style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                            fontWeight: FontWeight.bold,
+                          ),
+                        ),
+                      ],
                     ),
-                    const SizedBox(width: 8),
+                    const SizedBox(height: 16),
                     Text(
-                      'Family Progress',
-                      style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                        fontWeight: FontWeight.bold,
+                      'Today\'s Leaderboard',
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        fontWeight: FontWeight.w600,
                       ),
                     ),
+                    const SizedBox(height: 12),
+                    ...members.asMap().entries.map((entry) {
+                      final rank = entry.key + 1;
+                      return _buildMemberSummaryCard(entry.value, rank);
+                    }),
                   ],
                 ),
-                const SizedBox(height: 16),
-                Text(
-                  'Today\'s Leaderboard',
-                  style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-                const SizedBox(height: 12),
-                ...members.asMap().entries.map((entry) {
-                  final rank = entry.key + 1;
-                  return _buildMemberSummaryCard(entry.value, rank);
-                }),
-              ],
-            ),
-          ),
+              ),
+            );
+          },
         );
       },
     );

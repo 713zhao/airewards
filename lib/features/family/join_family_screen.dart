@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../core/services/family_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/task_service.dart';
+import '../../core/services/user_service.dart';
 import '../../core/injection/injection.dart';
 
 /// Screen for children to join a family using invitation code
@@ -53,6 +54,19 @@ class _JoinFamilyScreenState extends State<JoinFamilyScreen> {
       );
 
       if (joinedFamilyId != null) {
+        // Reload the user from Firestore to get updated familyId
+        try {
+          final userService = UserService();
+          final updatedUser = await userService.getUser(currentUser.id);
+          if (updatedUser != null) {
+            // Update the cached user in AuthService
+            AuthService.updateCurrentUser(updatedUser);
+            debugPrint('✅ User reloaded with familyId: ${updatedUser.familyId}');
+          }
+        } catch (e) {
+          debugPrint('⚠️ Failed to reload user after joining family: $e');
+        }
+        
         // Assign existing family tasks to the new child
         try {
           print('🎯 Assigning existing tasks to new family member...');
