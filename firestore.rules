@@ -17,8 +17,8 @@ service cloud.firestore {
     
     // Users collection - Enhanced family access
     match /users/{userId} {
-      // Users can always read/write their own document
-      allow read, write: if request.auth != null && request.auth.uid == userId;
+  // Users can always read/write their own document, even if familyId is null
+  allow read, write: if request.auth != null && request.auth.uid == userId;
       
       // Parents can read their children's user documents
       allow read: if request.auth != null 
@@ -67,8 +67,7 @@ service cloud.firestore {
           // Backward compatibility with ownerId
           || resource.data.ownerId == request.auth.uid
         );
-      
-      // Allow creating families
+      // Allow creating families even if user has no familyId
       allow create: if request.auth != null;
     }
     

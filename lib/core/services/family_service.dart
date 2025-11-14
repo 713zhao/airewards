@@ -619,23 +619,31 @@ class FamilyService extends ChangeNotifier {
           .where('familyId', isEqualTo: familyId)
           .get();
 
-      final List<String> memberIds = usersQuery.docs.map((doc) => doc.id).toList();
-      debugPrint('Found ${memberIds.length} family members to delete');
+      // Separate parent and children
+      String? parentId;
+      final List<String> childIds = [];
+      for (final doc in usersQuery.docs) {
+        final data = doc.data();
+        if (data['accountType'] == 'parent') {
+          parentId = doc.id;
+        } else {
+          childIds.add(doc.id);
+        }
+      }
+      debugPrint('Found ${childIds.length} children and parent: $parentId');
 
-      // 2) Delete task generation markers for all family members
-      if (memberIds.isNotEmpty) {
+      // 2) Delete task generation markers for all children
+      if (childIds.isNotEmpty) {
         try {
-          debugPrint('Deleting task generation markers for ${memberIds.length} family members');
+          debugPrint('Deleting task generation markers for ${childIds.length} children');
           int markerCount = 0;
-          
           // Delete markers in batches
-          for (final userId in memberIds) {
+          for (final userId in childIds) {
             try {
               final userMarkersQuery = await FirebaseFirestore.instance
                   .collection('task_generation_markers')
                   .where('userId', isEqualTo: userId)
                   .get();
-              
               if (userMarkersQuery.docs.isNotEmpty) {
                 final batch = FirebaseFirestore.instance.batch();
                 for (final markerDoc in userMarkersQuery.docs) {
@@ -643,13 +651,12 @@ class FamilyService extends ChangeNotifier {
                   markerCount++;
                 }
                 await batch.commit();
-                debugPrint('  Deleted ${userMarkersQuery.docs.length} markers for user: $userId');
+                debugPrint('  Deleted ${userMarkersQuery.docs.length} markers for child: $userId');
               }
             } catch (userMarkerError) {
-              debugPrint('WARNING: Failed to delete markers for user $userId: $userMarkerError');
+              debugPrint('WARNING: Failed to delete markers for child $userId: $userMarkerError');
             }
           }
-          
           if (markerCount > 0) {
             debugPrint('SUCCESS: Deleted total $markerCount task generation markers');
           }
@@ -690,24 +697,34 @@ class FamilyService extends ChangeNotifier {
       await _pagedDelete('redemptions');
       await _pagedDelete('rewards');
 
-      // 4) Delete all user documents in the family
-      debugPrint('Deleting ${memberIds.length} user documents');
-      if (memberIds.isNotEmpty) {
-        // Delete users in batches to avoid exceeding Firestore batch size limits
+      // 4) Delete all child user documents in the family
+      debugPrint('Deleting ${childIds.length} child user documents');
+      if (childIds.isNotEmpty) {
+        // Delete children in batches to avoid exceeding Firestore batch size limits
         const userBatchSize = 400; // Leave room for other operations
-        for (int i = 0; i < memberIds.length; i += userBatchSize) {
+        for (int i = 0; i < childIds.length; i += userBatchSize) {
           final batch = FirebaseFirestore.instance.batch();
-          final endIndex = (i + userBatchSize < memberIds.length) ? i + userBatchSize : memberIds.length;
-          
+          final endIndex = (i + userBatchSize < childIds.length) ? i + userBatchSize : childIds.length;
           for (int j = i; j < endIndex; j++) {
-            final userId = memberIds[j];
+            final userId = childIds[j];
             batch.delete(FirebaseFirestore.instance.collection('users').doc(userId));
           }
-          
           await batch.commit();
-          debugPrint('  Deleted users ${i + 1} to $endIndex');
+          debugPrint('  Deleted children ${i + 1} to $endIndex');
         }
-        debugPrint('SUCCESS: Deleted all ${memberIds.length} user documents');
+        debugPrint('SUCCESS: Deleted all ${childIds.length} child user documents');
+      }
+
+      // 5) Update parent user document to remove familyId and related fields
+      if (parentId != null) {
+        await FirebaseFirestore.instance.collection('users').doc(parentId).update({
+          'familyId': null,
+          'role': 'parent',
+          'accountType': 'parent',
+          'childrenIds': [],
+          // Add any other family-related fields to clear
+        });
+        debugPrint('Parent user $parentId updated to remove family association');
       }
 
       // 5) Delete the family document

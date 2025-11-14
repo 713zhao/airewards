@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'package:shared_preferences/shared_preferences.dart';
 
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
@@ -130,6 +131,11 @@ class AuthService {
           accountType: accountType,
           familyId: null, // New users start without a family
         );
+        
+        // Cache account type and role for disaster recovery
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('cached_account_type_${user.id}', accountType.value);
+        await prefs.setString('cached_role_${user.id}', role.name);
         
         // Save to database
         final userService = getIt<UserService>();
@@ -357,17 +363,50 @@ class AuthService {
       
       // If user doesn't exist in database, create it
       if (user == null) {
-        debugPrint('🔐 Creating new user in database...');
+        debugPrint('🔐 User document not found in database, attempting to restore...');
+        
+        // Try to restore from cached account type
+        final prefs = await SharedPreferences.getInstance();
+        final cachedAccountType = prefs.getString('cached_account_type_${firebaseUser.uid}');
+        final cachedRole = prefs.getString('cached_role_${firebaseUser.uid}');
+        
+        AccountType accountType = AccountType.child; // Default fallback
+        UserRole role = UserRole.child; // Default fallback
+        
+        if (cachedAccountType != null) {
+          debugPrint('🔐 Found cached account type: $cachedAccountType');
+          accountType = AccountType.fromString(cachedAccountType);
+          
+          if (cachedRole != null) {
+            role = UserRole.values.firstWhere(
+              (r) => r.toString() == 'UserRole.$cachedRole',
+              orElse: () => UserRole.child,
+            );
+          } else {
+            // Derive role from account type if not cached
+            role = accountType == AccountType.parent ? UserRole.parent : UserRole.child;
+          }
+        } else {
+          debugPrint('🔐 No cached account type found, defaulting to child');
+        }
+        
         user = UserModel.create(
           id: firebaseUser.uid,
           email: firebaseUser.email ?? '',
           displayName: firebaseUser.displayName ?? 'Unknown User',
           photoUrl: firebaseUser.photoURL,
-          accountType: AccountType.child, // Default to child account for safety
+          accountType: accountType,
+          role: role,
         );
         
         await userService.createUser(user);
+        debugPrint('🔐 Recreated user with accountType: ${accountType.value}, role: ${role.name}');
       } else {
+        // Cache the account type and role for future use
+        final prefs = await SharedPreferences.getInstance();
+        await prefs.setString('cached_account_type_${user.id}', user.accountType.value);
+        await prefs.setString('cached_role_${user.id}', user.role.name);
+        
         // Update last login time
         user = user.copyWith(lastLoginAt: DateTime.now());
         await userService.updateUser(user);

@@ -124,6 +124,10 @@ class _AIRewardsAppState extends State<AIRewardsApp> {
       ),
       themeMode: _themeService?.themeMode ?? ThemeMode.system,
       home: const SimpleAuthWrapper(),
+      routes: {
+        '/login': (context) => const LoginScreen(),
+        // Add other routes here as needed
+      },
       debugShowCheckedModeBanner: false,
     );
   }
