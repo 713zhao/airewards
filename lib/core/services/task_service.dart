@@ -1365,7 +1365,20 @@ class TaskService {
     required String familyId,
   }) async {
     try {
-      print('🎯 Generating tasks for new child: $childUserId');
+      debugPrint('🎯 Generating tasks for new child: $childUserId in family: $familyId');
+      
+      // First, verify that family templates exist
+      final templateQuery = await _firestore
+          .collection('tasks')
+          .where('familyId', isEqualTo: familyId)
+          .get();
+      debugPrint('📋 Found ${templateQuery.docs.length} family template tasks');
+      
+      if (templateQuery.docs.isEmpty) {
+        debugPrint('⚠️ No family templates found for familyId: $familyId');
+        debugPrint('   This might be because templates were not created when the family was set up.');
+        return;
+      }
       
       // Clear any existing generation marker so we can regenerate with the new familyId
       final generationService = TaskGenerationService();
@@ -1373,6 +1386,7 @@ class TaskService {
         userId: childUserId,
         date: DateTime.now(),
       );
+      debugPrint('🧹 Cleared generation marker for child: $childUserId');
       
       // Use TaskGenerationService to materialize templates into task_history
       final generated = await generationService.generateTasksForUserForDate(
@@ -1381,9 +1395,14 @@ class TaskService {
         familyId: familyId,
       );
       
-      print('✅ Generated ${generated.length} tasks in task_history for child $childUserId');
-    } catch (e) {
-      print('❌ Error generating tasks for new child: $e');
+      debugPrint('✅ Generated ${generated.length} tasks in task_history for child $childUserId');
+      
+      if (generated.isEmpty && templateQuery.docs.isNotEmpty) {
+        debugPrint('⚠️ Warning: Templates exist but no tasks were generated. Check template configuration.');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ Error generating tasks for new child: $e');
+      debugPrint('Stack trace: $stackTrace');
     }
   }
 

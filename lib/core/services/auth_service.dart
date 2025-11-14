@@ -415,12 +415,12 @@ class AuthService {
       _currentUser = user;
       _userController.add(user);
 
-      // If this is a child account, trigger task generation for today (blocking).
+      // Trigger task generation for today (blocking) for all users with a family.
       // Wait for generation to complete so UI shows tasks immediately.
       try {
-        if (user.accountType == AccountType.child) {
+        if (user.familyId != null) {
           final uid = user.id;
-          debugPrint('🔁 Starting task generation for user $uid...');
+          debugPrint('🔁 Starting task generation for user $uid (${user.accountType})...');
           final generated = await TaskGenerationService()
               .generateTasksForUserForDate(
                 userId: uid, 

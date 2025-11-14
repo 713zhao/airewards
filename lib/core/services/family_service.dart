@@ -206,8 +206,21 @@ class FamilyService extends ChangeNotifier {
       // Ensure parent starts with zero points (new user setup)
       await _resetUserPoints(parentId);
       
-      // Create default tasks
+      // Create default tasks (templates in tasks collection)
       await _createDefaultTasks(familyId, parentId);
+      
+      // Generate task_history entries for the parent from the templates
+      try {
+        debugPrint('📋 Generating initial tasks for parent: $parentId');
+        final taskService = TaskService();
+        await taskService.assignExistingTasksToNewChild(
+          childUserId: parentId,
+          familyId: familyId,
+        );
+        debugPrint('✅ Parent tasks generated successfully');
+      } catch (e) {
+        debugPrint('⚠️ Error generating parent tasks: $e');
+      }
       
       // Create default rewards
       await _createDefaultRewards();
@@ -463,7 +476,8 @@ class FamilyService extends ChangeNotifier {
             recurrence = RecurrencePattern.fromMap(Map<String, dynamic>.from(recPattern));
           }
 
-            debugPrint('📝 Creating task: ${taskData['title']} for familyId: $familyId, parentId: $parentId');
+            debugPrint('📝 Creating family template task: ${taskData['title']} for familyId: $familyId');
+            // Create family-wide template (assigned to parent initially, but available for all family members)
             await taskService.createTaskForFamily(
               familyId: familyId,
               parentUserId: parentId,
@@ -471,7 +485,7 @@ class FamilyService extends ChangeNotifier {
               description: taskData['description'] as String,
               category: taskData['category'] as String,
               pointValue: taskData['points'] as int,
-              assignedToUserId: parentId,
+              assignedToUserId: parentId, // Assign to parent as template owner
               // If a recurrence pattern was provided, ensure the stored template is marked recurring.
               isRecurring: recurrence != null ? true : (taskData['isRecurring'] as bool),
               recurrencePattern: recurrence,
