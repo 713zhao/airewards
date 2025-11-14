@@ -7,6 +7,7 @@ class RewardItem {
   final int iconCodePoint;
   final int colorValue;
   final bool isActive;
+  final String? familyId; // Family this reward belongs to
   final DateTime createdAt;
   final DateTime? updatedAt;
 
@@ -19,6 +20,7 @@ class RewardItem {
     required this.iconCodePoint,
     required this.colorValue,
     required this.isActive,
+    this.familyId,
     required this.createdAt,
     this.updatedAt,
   });
@@ -32,6 +34,7 @@ class RewardItem {
     int? iconCodePoint,
     int? colorValue,
     bool? isActive,
+    String? familyId,
     DateTime? createdAt,
     DateTime? updatedAt,
   }) {
@@ -44,6 +47,7 @@ class RewardItem {
       iconCodePoint: iconCodePoint ?? this.iconCodePoint,
       colorValue: colorValue ?? this.colorValue,
       isActive: isActive ?? this.isActive,
+      familyId: familyId ?? this.familyId,
       createdAt: createdAt ?? this.createdAt,
       updatedAt: updatedAt ?? this.updatedAt,
     );
@@ -59,6 +63,7 @@ class RewardItem {
       'iconCodePoint': iconCodePoint,
       'colorValue': colorValue,
       'isActive': isActive,
+      'familyId': familyId,
       'createdAt': createdAt.toIso8601String(),
       'updatedAt': updatedAt?.toIso8601String(),
     };
@@ -66,16 +71,17 @@ class RewardItem {
 
   factory RewardItem.fromJson(Map<String, dynamic> json) {
     return RewardItem(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
-      points: json['points'],
-      category: json['category'],
-      iconCodePoint: json['iconCodePoint'],
-      colorValue: json['colorValue'],
-      isActive: json['isActive'],
-      createdAt: DateTime.parse(json['createdAt']),
-      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt']) : null,
+      id: json['id'] as String,
+      title: json['title'] as String,
+      description: json['description'] as String,
+      points: json['points'] as int,
+      category: json['category'] as String,
+      iconCodePoint: json['iconCodePoint'] as int,
+      colorValue: json['colorValue'] as int,
+      isActive: json['isActive'] as bool,
+      familyId: json['familyId'] as String?,
+      createdAt: DateTime.parse(json['createdAt'] as String),
+      updatedAt: json['updatedAt'] != null ? DateTime.parse(json['updatedAt'] as String) : null,
     );
   }
 }

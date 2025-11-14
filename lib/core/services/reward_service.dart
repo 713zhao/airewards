@@ -1,8 +1,8 @@
 import 'dart:convert';
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../models/reward_item.dart';
-import '../models/user_model.dart';
 import '../services/auth_service.dart';
 import '../services/family_service.dart';
 import '../injection/injection.dart';
@@ -16,6 +16,7 @@ class RewardService {
   void print(Object? object) {}
 
   static const String _rewardsKey = 'rewards_data';
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   
   List<RewardItem> _rewards = [];
   final ValueNotifier<List<RewardItem>> _rewardsNotifier = ValueNotifier<List<RewardItem>>([]);
@@ -46,35 +47,108 @@ class RewardService {
 
   Future<void> _loadRewards() async {
     try {
+      final currentUser = AuthService.currentUser;
+      if (currentUser?.familyId == null) {
+        debugPrint('No family ID, loading from local storage');
+        await _loadRewardsFromLocal();
+        return;
+      }
+
+      // Load from Firestore based on familyId
+      final querySnapshot = await _firestore
+          .collection('rewards')
+          .where('familyId', isEqualTo: currentUser!.familyId)
+          .get();
+
+      if (querySnapshot.docs.isNotEmpty) {
+        _rewards = querySnapshot.docs
+            .map((doc) {
+              try {
+                final data = doc.data();
+                data['id'] = doc.id; // Ensure ID matches document ID
+                return RewardItem.fromJson(data);
+              } catch (e) {
+                debugPrint('Error parsing reward ${doc.id}: $e');
+                return null;
+              }
+            })
+            .whereType<RewardItem>()
+            .toList();
+        
+        debugPrint('Loaded ${_rewards.length} rewards from Firestore');
+        _rewardsNotifier.value = List<RewardItem>.from(_rewards);
+        
+        // Also save to local cache
+        await _saveRewardsToLocal();
+      } else {
+        debugPrint('No rewards in Firestore, checking local storage');
+        await _loadRewardsFromLocal();
+      }
+    } catch (e) {
+      debugPrint('Error loading rewards from Firestore: $e');
+      await _loadRewardsFromLocal();
+    }
+  }
+
+  Future<void> _loadRewardsFromLocal() async {
+    try {
       final prefs = await SharedPreferences.getInstance();
       final rewardsJson = prefs.getString(_rewardsKey);
       
       if (rewardsJson != null) {
         final List<dynamic> rewardsList = jsonDecode(rewardsJson);
         _rewards = rewardsList.map((json) => RewardItem.fromJson(json)).toList();
+        debugPrint('Loaded ${_rewards.length} rewards from local storage');
       }
       
-      // Create a new list to trigger ValueListenableBuilder
       _rewardsNotifier.value = List<RewardItem>.from(_rewards);
     } catch (e) {
-      debugPrint('Error loading rewards: $e');
-      await _createDefaultRewards();
+      debugPrint('Error loading rewards from local storage: $e');
     }
   }
 
   Future<void> _saveRewards() async {
     try {
-      final prefs = await SharedPreferences.getInstance();
-      final rewardsJson = jsonEncode(_rewards.map((r) => r.toJson()).toList());
-      await prefs.setString(_rewardsKey, rewardsJson);
-      // Create a new list to trigger ValueListenableBuilder
+      final currentUser = AuthService.currentUser;
+      
+      // Save to Firestore if user has a family
+      if (currentUser?.familyId != null) {
+        final batch = _firestore.batch();
+        
+        for (final reward in _rewards) {
+          final docRef = _firestore.collection('rewards').doc(reward.id);
+          final rewardWithFamily = reward.copyWith(familyId: currentUser!.familyId);
+          batch.set(docRef, rewardWithFamily.toJson(), SetOptions(merge: true));
+        }
+        
+        await batch.commit();
+        debugPrint('Saved ${_rewards.length} rewards to Firestore');
+      }
+      
+      // Also save to local cache
+      await _saveRewardsToLocal();
+      
+      // Notify listeners
       _rewardsNotifier.value = List<RewardItem>.from(_rewards);
     } catch (e) {
       debugPrint('Error saving rewards: $e');
     }
   }
 
+  Future<void> _saveRewardsToLocal() async {
+    try {
+      final prefs = await SharedPreferences.getInstance();
+      final rewardsJson = jsonEncode(_rewards.map((r) => r.toJson()).toList());
+      await prefs.setString(_rewardsKey, rewardsJson);
+    } catch (e) {
+      debugPrint('Error saving rewards to local storage: $e');
+    }
+  }
+
   Future<void> _createDefaultRewards() async {
+    final currentUser = AuthService.currentUser;
+    final familyId = currentUser?.familyId;
+    
     _rewards = [
       RewardItem(
         id: '1',
@@ -85,6 +159,7 @@ class RewardService {
         iconCodePoint: Icons.movie.codePoint,
         colorValue: Colors.blue.value,
         isActive: true,
+        familyId: familyId,
         createdAt: DateTime.now().subtract(const Duration(days: 5)),
       ),
       RewardItem(
@@ -96,6 +171,7 @@ class RewardService {
         iconCodePoint: Icons.attach_money.codePoint,
         colorValue: Colors.green.value,
         isActive: true,
+        familyId: familyId,
         createdAt: DateTime.now().subtract(const Duration(days: 4)),
       ),
       RewardItem(
@@ -107,6 +183,7 @@ class RewardService {
         iconCodePoint: Icons.games.codePoint,
         colorValue: Colors.orange.value,
         isActive: true,
+        familyId: familyId,
         createdAt: DateTime.now().subtract(const Duration(days: 3)),
       ),
       RewardItem(
@@ -118,6 +195,7 @@ class RewardService {
         iconCodePoint: Icons.restaurant.codePoint,
         colorValue: Colors.red.value,
         isActive: true,
+        familyId: familyId,
         createdAt: DateTime.now().subtract(const Duration(days: 2)),
       ),
       RewardItem(
@@ -129,6 +207,7 @@ class RewardService {
         iconCodePoint: Icons.toys.codePoint,
         colorValue: Colors.purple.value,
         isActive: true,
+        familyId: familyId,
         createdAt: DateTime.now().subtract(const Duration(days: 1)),
       ),
       RewardItem(
@@ -140,6 +219,7 @@ class RewardService {
         iconCodePoint: Icons.directions_car.codePoint,
         colorValue: Colors.indigo.value,
         isActive: true,
+        familyId: familyId,
         createdAt: DateTime.now(),
       ),
     ];
@@ -181,6 +261,15 @@ class RewardService {
     }
     
     _rewards.removeWhere((r) => r.id == id);
+    
+    // Delete from Firestore
+    try {
+      await _firestore.collection('rewards').doc(id).delete();
+      debugPrint('Deleted reward $id from Firestore');
+    } catch (e) {
+      debugPrint('Error deleting reward from Firestore: $e');
+    }
+    
     await _saveRewards();
   }
 

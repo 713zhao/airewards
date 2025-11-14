@@ -289,41 +289,23 @@ class _FamilyManagementScreenState extends State<FamilyManagementScreen> {
     Navigator.of(context, rootNavigator: true).pop();
 
     if (success) {
-      // Reflect removal in in-memory auth user immediately so Family tab updates
-      final user = AuthService.currentUser;
-      if (user != null && user.familyId != null) {
-        // Create a new user model with familyId explicitly set to empty string
-        // (copyWith with null won't work due to null-coalescing operator)
-        final updatedUser = UserModel(
-          id: user.id,
-          email: user.email,
-          displayName: user.displayName,
-          photoUrl: user.photoUrl,
-          role: user.role,
-          accountType: user.accountType,
-          familyId: null, // Explicitly clear the familyId
-          currentPoints: user.currentPoints,
-          totalPointsEarned: user.totalPointsEarned,
-          totalPointsSpent: user.totalPointsSpent,
-          createdAt: user.createdAt,
-          lastLoginAt: user.lastLoginAt,
-          preferences: user.preferences,
-          achievements: user.achievements,
-          isActive: user.isActive,
-        );
-        AuthService.updateCurrentUser(updatedUser);
-      }
-
-      setState(() {
-        _currentFamily = null;
-        _children = [];
-        _childrenTodayPoints.clear();
-        _generatedInvitationCode = null;
-      });
-
+      // Show success message before signing out
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Family deleted successfully')),
+        const SnackBar(
+          content: Text('Family deleted successfully. You will be signed out.'),
+          duration: Duration(seconds: 2),
+        ),
       );
+
+      // Sign out the user since their user document has been deleted
+      // This prevents the app from recreating the user with wrong account type
+      await Future.delayed(const Duration(seconds: 2));
+      await AuthService.signOut();
+      
+      // Navigate to login screen
+      if (mounted) {
+        Navigator.of(context).pushNamedAndRemoveUntil('/login', (route) => false);
+      }
     } else {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to delete family. Please try again.')),
