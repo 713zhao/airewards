@@ -3,6 +3,7 @@ import '../../core/services/family_service.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/task_service.dart';
 import '../../core/services/user_service.dart';
+import '../../core/services/reward_service.dart';
 import '../../core/injection/injection.dart';
 
 /// Screen for children to join a family using invitation code
@@ -81,8 +82,19 @@ class _JoinFamilyScreenState extends State<JoinFamilyScreen> {
           // Don't fail the join process if task assignment fails
         }
         
+        // Reload rewards from family
+        try {
+          print('🎁 Loading family rewards...');
+          final rewardService = RewardService();
+          await rewardService.reloadRewards();
+          print('✅ Rewards loaded successfully');
+        } catch (e) {
+          print('⚠️ Error loading family rewards: $e');
+          // Don't fail the join process if reward loading fails
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Successfully joined the family! Existing tasks have been assigned to you.')),
+          const SnackBar(content: Text('Successfully joined the family! Tasks and rewards have been loaded.')),
         );
         Navigator.of(context).pop(true); // Return true to indicate success
       } else {

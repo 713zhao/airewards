@@ -222,8 +222,8 @@ class FamilyService extends ChangeNotifier {
         debugPrint('⚠️ Error generating parent tasks: $e');
       }
       
-      // Create default rewards
-      await _createDefaultRewards();
+      // Create default rewards for the family
+      await _createDefaultRewards(familyId);
       
       debugPrint('✅ Successfully created default items for family: $familyId');
     } catch (e) {
@@ -505,14 +505,13 @@ class FamilyService extends ChangeNotifier {
   }
 
   /// Create default rewards for the family
-  Future<void> _createDefaultRewards() async {
+  Future<void> _createDefaultRewards(String familyId) async {
     try {
-      // The RewardService already has a _createDefaultRewards method
-      // We'll call the RewardService initialization which creates defaults
+      // Create default rewards for this specific family in Firestore
       final rewardService = RewardService();
-      await rewardService.initialize();
+      await rewardService.createDefaultRewardsForFamily(familyId);
       
-      debugPrint('✅ Default rewards initialized via RewardService');
+      debugPrint('✅ Default rewards created for family: $familyId');
     } catch (e) {
       debugPrint('❌ Error creating default rewards: $e');
     }

@@ -45,6 +45,13 @@ class RewardService {
     }
   }
 
+  /// Reload rewards from Firestore (useful when child joins family or family data changes)
+  Future<void> reloadRewards() async {
+    debugPrint('🔄 Reloading rewards from Firestore...');
+    await _loadRewards();
+    debugPrint('✅ Rewards reloaded: ${_rewards.length} items');
+  }
+
   Future<void> _loadRewards() async {
     try {
       final currentUser = AuthService.currentUser;
@@ -142,6 +149,101 @@ class RewardService {
       await prefs.setString(_rewardsKey, rewardsJson);
     } catch (e) {
       debugPrint('Error saving rewards to local storage: $e');
+    }
+  }
+
+  /// Create default rewards for a specific family in Firestore
+  Future<void> createDefaultRewardsForFamily(String familyId) async {
+    try {
+      debugPrint('📝 Creating default rewards for family: $familyId');
+      
+      final defaultRewards = [
+        RewardItem(
+          id: '${familyId}_1',
+          title: 'Movie Night',
+          description: 'Choose a family movie for movie night',
+          points: 100,
+          category: 'Entertainment',
+          iconCodePoint: Icons.movie.codePoint,
+          colorValue: Colors.blue.value,
+          isActive: true,
+          familyId: familyId,
+          createdAt: DateTime.now(),
+        ),
+        RewardItem(
+          id: '${familyId}_2',
+          title: 'Extra Allowance',
+          description: 'Get extra pocket money this week',
+          points: 200,
+          category: 'Money',
+          iconCodePoint: Icons.attach_money.codePoint,
+          colorValue: Colors.green.value,
+          isActive: true,
+          familyId: familyId,
+          createdAt: DateTime.now(),
+        ),
+        RewardItem(
+          id: '${familyId}_3',
+          title: 'Game Time',
+          description: 'Extra 30 minutes of game time',
+          points: 75,
+          category: 'Entertainment',
+          iconCodePoint: Icons.games.codePoint,
+          colorValue: Colors.orange.value,
+          isActive: true,
+          familyId: familyId,
+          createdAt: DateTime.now(),
+        ),
+        RewardItem(
+          id: '${familyId}_4',
+          title: 'Choose Dinner',
+          description: 'Pick what we have for dinner tonight',
+          points: 150,
+          category: 'Food',
+          iconCodePoint: Icons.restaurant.codePoint,
+          colorValue: Colors.red.value,
+          isActive: true,
+          familyId: familyId,
+          createdAt: DateTime.now(),
+        ),
+        RewardItem(
+          id: '${familyId}_5',
+          title: 'New Toy',
+          description: 'Pick a new toy from the store',
+          points: 300,
+          category: 'Shopping',
+          iconCodePoint: Icons.toys.codePoint,
+          colorValue: Colors.purple.value,
+          isActive: true,
+          familyId: familyId,
+          createdAt: DateTime.now(),
+        ),
+        RewardItem(
+          id: '${familyId}_6',
+          title: 'Day Out',
+          description: 'Special day trip to somewhere fun',
+          points: 500,
+          category: 'Activities',
+          iconCodePoint: Icons.directions_car.codePoint,
+          colorValue: Colors.indigo.value,
+          isActive: true,
+          familyId: familyId,
+          createdAt: DateTime.now(),
+        ),
+      ];
+      
+      // Save directly to Firestore
+      final batch = _firestore.batch();
+      for (final reward in defaultRewards) {
+        final docRef = _firestore.collection('rewards').doc(reward.id);
+        batch.set(docRef, reward.toJson());
+      }
+      await batch.commit();
+      
+      debugPrint('✅ Created ${defaultRewards.length} default rewards for family: $familyId');
+    } catch (e) {
+      debugPrint('❌ Error creating default rewards for family: $e');
+      rethrow;
     }
   }
 
