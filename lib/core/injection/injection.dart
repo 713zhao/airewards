@@ -20,40 +20,33 @@ final GetIt getIt = GetIt.instance;
 
 /// Configure dependency injection with proper Firebase initialization
 Future<void> configureDependencies() async {
-  // Initialize Firebase first
+  // Register non-Firebase services first so UI widgets can function
+  getIt.registerLazySingleton<Connectivity>(() => Connectivity());
+  getIt.registerLazySingleton<NetworkInfo>(() => ConnectivityService(getIt<Connectivity>()));
+  getIt.registerLazySingleton<ThemeService>(() => ThemeService());
+
+  // Try initializing Firebase (best-effort, handled internally)
   await FirebaseService.initialize(config.Environment.development);
-  
-  // Register Firebase services manually
+
+  // Register Firebase services (only after Firebase.initializeApp)
   getIt.registerLazySingleton<FirebaseAuth>(() => FirebaseAuth.instance);
   getIt.registerLazySingleton<FirebaseFirestore>(() => FirebaseFirestore.instance);
-  
+
   // Configure GoogleSignIn
   if (kIsWeb) {
-    // For web, use GoogleSignIn with web configuration (placeholder client ID)
     getIt.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn(
-      clientId: 'your-web-client-id.apps.googleusercontent.com', // Placeholder for testing
-    ));
+          clientId: 'your-web-client-id.apps.googleusercontent.com', // Placeholder for testing
+        ));
   } else {
     getIt.registerLazySingleton<GoogleSignIn>(() => GoogleSignIn());
   }
-  
-  // Register connectivity services
-  getIt.registerLazySingleton<Connectivity>(() => Connectivity());
-  getIt.registerLazySingleton<NetworkInfo>(() => ConnectivityService(getIt<Connectivity>()));
-  
-  // Register theme service
-  getIt.registerLazySingleton<ThemeService>(() => ThemeService());
-  
-  // Register authentication and user services
+
+  // App services
   getIt.registerLazySingleton<UserService>(() => UserService());
-  
-  // Register task service
   getIt.registerLazySingleton<TaskService>(() => TaskService());
-  
-  // Register family service
   getIt.registerLazySingleton<FamilyService>(() => FamilyService());
-  
-  // Initialize services
+
+  // Initialize core app services
   await AuthService.initialize();
   await getIt<ThemeService>().initialize();
   await getIt<FamilyService>().initialize();

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+// import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/models/user_model.dart';
 import '../../core/models/account_type.dart';
@@ -25,9 +26,7 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
   String? _errorMessage;
   AccountType _selectedAccountType = AccountType.parent;
-
-  // Local print override: silence all verbose prints in this screen
-  void print(Object? object) {}
+  
 
   @override
   void initState() {
@@ -50,10 +49,9 @@ class _LoginScreenState extends State<LoginScreen> {
       final lastEmail = prefs.getString('last_email');
       if (lastEmail != null && lastEmail.isNotEmpty) {
         _emailController.text = lastEmail;
-        debugPrint('🔐 Restored last email: $lastEmail');
       }
     } catch (e) {
-      debugPrint('⚠️ Failed to load last email: $e');
+      // ignore errors
     }
   }
 
@@ -62,9 +60,8 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final prefs = await SharedPreferences.getInstance();
       await prefs.setString('last_email', email);
-      debugPrint('🔐 Saved email for next login: $email');
     } catch (e) {
-      debugPrint('⚠️ Failed to save email: $e');
+      // ignore errors
     }
   }
 
@@ -78,6 +75,7 @@ class _LoginScreenState extends State<LoginScreen> {
             padding: context.responsivePadding,
             child: Column(
               children: [
+                
                 const SizedBox(height: 40),
                 
                 // App logo and title
@@ -389,7 +387,7 @@ class _LoginScreenState extends State<LoginScreen> {
       _isLoading = true;
       _errorMessage = null;
     });
-
+    
     try {
       UserModel? user;
       
@@ -411,8 +409,11 @@ class _LoginScreenState extends State<LoginScreen> {
         // Save email for next time
         await _saveLastEmail(_emailController.text.trim());
         _navigateToMainApp();
+      } else {
+        // no-op
       }
-    } catch (e) {
+  } catch (e) {
+      // ignore stack for user-facing
       setState(() {
         _errorMessage = e.toString().replaceAll('AuthException: ', '');
       });
@@ -477,10 +478,16 @@ class _LoginScreenState extends State<LoginScreen> {
 
 
   void _navigateToMainApp() {
-    Navigator.of(context).pushReplacement(
-      MaterialPageRoute(
-        builder: (context) => const MainAppScreen(),
-      ),
-    );
+    try {
+      Navigator.of(context).pushReplacement(
+        MaterialPageRoute(
+          builder: (context) {
+            return const MainAppScreen();
+          },
+        ),
+      );
+  } catch (e) {
+      // ignore navigation errors for now
+    }
   }
 }

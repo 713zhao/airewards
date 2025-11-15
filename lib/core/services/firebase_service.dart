@@ -23,39 +23,71 @@ class FirebaseService {
 
   /// Initialize Firebase services
   static Future<void> initialize(config.Environment environment) async {
+    // Step 1: Core initialization must succeed
     try {
-      // Initialize Firebase Core with platform-specific options
       await Firebase.initializeApp(
         options: DefaultFirebaseOptions.currentPlatform,
       );
-
-      // Initialize individual services
-      await _initializeAuth();
-      await _initializeFirestore();
-      await _initializeAnalytics();
-      await _initializeMessaging();
-      await _initializePerformance();
-      await _initializeCrashlytics();
-
-      debugPrint('✅ Firebase services initialized successfully');
-    } catch (e, stackTrace) {
-      debugPrint('❌ Error initializing Firebase: $e');
-      if (!kDebugMode) {
-        await FirebaseCrashlytics.instance.recordError(e, stackTrace);
-      }
+    } catch (e, _ ) {
+      debugPrint('❌ Firebase.initializeApp failed: $e');
+      // Core failure is fatal
       rethrow;
     }
+
+    // Step 2: Best-effort initialize each service independently.
+    // None of these should crash the whole app on web.
+    try {
+      await _initializeAuth();
+    } catch (e) {
+      debugPrint('⚠️  Firebase Auth init failed (continuing): $e');
+    }
+
+    try {
+      await _initializeFirestore();
+    } catch (e) {
+      debugPrint('⚠️  Firestore init failed (continuing): $e');
+    }
+
+    try {
+      await _initializeAnalytics();
+    } catch (e) {
+      debugPrint('⚠️  Analytics init failed (continuing): $e');
+    }
+
+    try {
+      await _initializeMessaging();
+    } catch (e) {
+      debugPrint('⚠️  Messaging init failed (continuing): $e');
+    }
+
+    try {
+      await _initializePerformance();
+    } catch (e) {
+      debugPrint('⚠️  Performance init failed (continuing): $e');
+    }
+
+    try {
+      await _initializeCrashlytics();
+    } catch (e) {
+      debugPrint('⚠️  Crashlytics init failed (continuing): $e');
+    }
+
+    debugPrint('✅ Firebase services initialized (best-effort)');
   }
 
   /// Initialize Firebase Authentication
   static Future<void> _initializeAuth() async {
     _auth = FirebaseAuth.instance;
     
-    // Configure Auth settings
-    await _auth!.setSettings(
-      appVerificationDisabledForTesting: kDebugMode,
-      forceRecaptchaFlow: !kDebugMode,
-    );
+    // Configure Auth settings (some options may not be supported on Web)
+    try {
+      await _auth!.setSettings(
+        appVerificationDisabledForTesting: kDebugMode,
+        forceRecaptchaFlow: !kDebugMode,
+      );
+    } catch (e) {
+      debugPrint('⚠️  Auth.setSettings not fully supported on this platform: $e');
+    }
 
     debugPrint('✅ Firebase Auth initialized');
   }
@@ -88,22 +120,27 @@ class FirebaseService {
 
   /// Initialize Firebase Cloud Messaging
   static Future<void> _initializeMessaging() async {
+    // Messaging has additional constraints on web (service worker, https etc.)
     _messaging = FirebaseMessaging.instance;
+    try {
+      NotificationSettings settings = await _messaging!.requestPermission(
+        alert: true,
+        badge: true,
+        sound: true,
+        carPlay: false,
+        criticalAlert: false,
+        provisional: false,
+      );
+      debugPrint('✅ Firebase Messaging initialized: ${settings.authorizationStatus}');
+    } catch (e) {
+      debugPrint('⚠️  Messaging permission request failed: $e');
+    }
 
-    // Request permission for notifications
-    NotificationSettings settings = await _messaging!.requestPermission(
-      alert: true,
-      badge: true,
-      sound: true,
-      carPlay: false,
-      criticalAlert: false,
-      provisional: false,
-    );
-
-    debugPrint('✅ Firebase Messaging initialized: ${settings.authorizationStatus}');
-
-    // Handle background messages
-    FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    try {
+      FirebaseMessaging.onBackgroundMessage(_firebaseMessagingBackgroundHandler);
+    } catch (e) {
+      debugPrint('⚠️  onBackgroundMessage setup failed: $e');
+    }
   }
 
   /// Initialize Firebase Performance

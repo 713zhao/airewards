@@ -1,9 +1,10 @@
-import 'dart:async';
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'core/injection/injection.dart';
 import 'core/services/auth_service.dart';
+import 'core/models/user_model.dart';
 import 'core/theme/theme_service.dart';
 import 'shared/widgets/network_status_indicator.dart';
 import 'features/auth/login_screen.dart';
@@ -14,25 +15,18 @@ void main() async {
   WidgetsFlutterBinding.ensureInitialized();
   
   try {
-    debugPrint('🚀 Starting AI Rewards App...');
-    
     // Initialize Hive for local storage
     await Hive.initFlutter();
-    debugPrint('✅ Hive initialized');
     
     // Initialize dependency injection with error handling
     try {
       await configureDependencies();
-      debugPrint('✅ Dependency injection configured');
     } catch (e) {
-      debugPrint('⚠️ Dependency injection failed: $e');
       // Continue without services for now
     }
-    
-    debugPrint('🎯 Launching main app...');
     runApp(const AIRewardsApp());
   } catch (e) {
-    debugPrint('❌ App initialization failed: $e');
+    debugPrint('App initialization failed: $e');
     
     // Run minimal fallback app
     runApp(MaterialApp(
@@ -106,8 +100,6 @@ class _AIRewardsAppState extends State<AIRewardsApp> {
 
   @override
   Widget build(BuildContext context) {
-    debugPrint('🎨 Building AIRewardsApp MaterialApp...');
-    
     return MaterialApp(
       title: 'AI Rewards System',
       navigatorKey: NavigationService.navigatorKey,
@@ -124,6 +116,7 @@ class _AIRewardsAppState extends State<AIRewardsApp> {
       ),
       themeMode: _themeService?.themeMode ?? ThemeMode.system,
       home: const SimpleAuthWrapper(),
+      
       routes: {
         '/login': (context) => const LoginScreen(),
         // Add other routes here as needed
@@ -142,69 +135,24 @@ class SimpleAuthWrapper extends StatefulWidget {
 }
 
 class _SimpleAuthWrapperState extends State<SimpleAuthWrapper> {
-  bool _isInitialized = false;
-  StreamSubscription? _authSubscription;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeAuth();
-    
-    // Listen to auth changes and rebuild when auth state changes
-    _authSubscription = AuthService.userStream.listen((user) {
-      if (mounted) {
-        setState(() {
-          // Trigger rebuild when auth state changes
-        });
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    _authSubscription?.cancel();
-    super.dispose();
-  }
-
-  Future<void> _initializeAuth() async {
-    try {
-      // Wait a bit for services to initialize
-      await Future.delayed(const Duration(milliseconds: 500));
-      
-      debugPrint('🔐 Auth wrapper initialized');
-      
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
-      }
-    } catch (e) {
-      debugPrint('❌ Auth initialization failed: $e');
-      if (mounted) {
-        setState(() {
-          _isInitialized = true;
-        });
-      }
-    }
-  }
-
   @override
   Widget build(BuildContext context) {
-    if (!_isInitialized) {
-      debugPrint('🔐 Building AuthWrapper - initializing...');
-      return const SplashScreen();
-    }
+    // Use a StreamBuilder so we don't depend on manual init flags.
+    return StreamBuilder<UserModel?>(
+      stream: AuthService.userStream,
+      initialData: AuthService.currentUser,
+      builder: (context, snapshot) {
+        final user = snapshot.data;
+        
 
-    // Check current auth state directly
-    final currentUser = AuthService.currentUser;
-    
-    if (currentUser != null) {
-      debugPrint('🔐 User authenticated: ${currentUser.displayName} (${currentUser.email})');
-      return const MainAppScreen();
-    } else {
-      debugPrint('🔐 No user authenticated - showing LoginScreen');
-      return const LoginScreen();
-    }
+        // Do NOT block on waiting. If we don't have a user, go straight to Login.
+        if (user != null) {
+          return const MainAppScreen();
+        }
+
+        return const LoginScreen();
+      },
+    );
   }
 }
 

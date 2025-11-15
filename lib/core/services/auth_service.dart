@@ -18,14 +18,22 @@ class AuthService {
   static final StreamController<UserModel?> _userController = StreamController<UserModel?>.broadcast();
   static UserModel? _currentUser;
 
-  // Local print override: silence all verbose prints in this service
-  static void print(Object? object) {}
-
   /// Initialize authentication service
   static Future<void> initialize() async {
     debugPrint('🔐 Initializing AuthService...');
     
     try {
+      // On Web, ensure auth persistence is set (Safari private mode may not support IndexedDB)
+      if (kIsWeb) {
+        try {
+          await _auth.setPersistence(Persistence.LOCAL);
+        } on FirebaseAuthException {
+          try {
+            await _auth.setPersistence(Persistence.SESSION);
+          } catch (_) {}
+        } catch (_) {}
+      }
+
       // Initialize Google Sign-In (like home.dart approach)
       if (kIsWeb) {
         _googleSignIn = GoogleSignIn(
@@ -38,7 +46,7 @@ class AuthService {
         );
       }
       
-      debugPrint('✅ Google Sign-In initialized');
+  debugPrint('Google Sign-In initialized');
     } catch (e) {
       debugPrint('⚠️ Google Sign-In initialization failed: $e');
       // Continue without Google Sign-In - user can still use email auth
@@ -47,6 +55,16 @@ class AuthService {
     // Listen to auth state changes
     _auth.authStateChanges().listen(_onAuthStateChanged);
     
+    // On web, also check for redirect results (needed for iOS Safari fallback)
+    if (kIsWeb) {
+      try {
+        final result = await _auth.getRedirectResult();
+        if (result.user != null) {
+          await _loadCurrentUser(result.user!);
+        }
+      } catch (_) {}
+    }
+
     // Check if user is already signed in
     final firebaseUser = _auth.currentUser;
     if (firebaseUser != null) {
@@ -79,7 +97,8 @@ class AuthService {
   /// Sign in with email and password
   static Future<UserModel?> signInWithEmail(String email, String password) async {
     try {
-      debugPrint('🔐 Signing in with email: $email');
+      // Use both debugPrint (for terminal) and print (for browser console on web)
+  debugPrint('Signing in with email');
       
       final credential = await _auth.signInWithEmailAndPassword(
         email: email,
@@ -87,16 +106,16 @@ class AuthService {
       );
       
       if (credential.user != null) {
-        debugPrint('✅ Email authentication successful');
+        debugPrint('Email authentication successful');
         return await _loadCurrentUser(credential.user!);
       }
       return null;
     } on FirebaseAuthException catch (e) {
-      debugPrint('❌ Email sign-in failed: ${e.code} - ${e.message}');
+      debugPrint('Email sign-in failed: ${e.code} - ${e.message}');
       String userMessage = _getFirebaseAuthErrorMessage(e.code);
       throw AuthException(userMessage);
     } catch (e) {
-      debugPrint('❌ Email sign-in failed: $e');
+      debugPrint('Email sign-in failed: $e');
       throw AuthException('Sign-in failed. Please try again.');
     }
   }
@@ -110,7 +129,7 @@ class AuthService {
     AccountType accountType = AccountType.child,
   }) async {
     try {
-      debugPrint('🔐 Signing up with email: $email');
+  debugPrint('Signing up with email');
       
       final credential = await _auth.createUserWithEmailAndPassword(
         email: email,
@@ -168,40 +187,59 @@ class AuthService {
         await initialize();
       }
       
+      // Prefer using FirebaseAuth provider flow on web to better handle Safari popup/redirect quirks
+      if (kIsWeb) {
+        final provider = GoogleAuthProvider();
+        try {
+          debugPrint('🔐 Attempting signInWithPopup for Google on web');
+          final cred = await _auth.signInWithPopup(provider);
+          if (cred.user != null) {
+            debugPrint('✅ Firebase authentication (popup) successful');
+            return await _loadCurrentUser(cred.user!);
+          }
+        } on FirebaseAuthException catch (e) {
+          // Popup may be blocked/closed on iOS Safari; fallback to redirect flow
+          final code = e.code.toLowerCase();
+          debugPrint('⚠️ signInWithPopup failed: ${e.code} - ${e.message}. Falling back to redirect...');
+          if (code.contains('popup') || code.contains('blocked') || code.contains('unauthorized-domain')) {
+            await _auth.signInWithRedirect(provider);
+            // The app will be redirected back and _onAuthStateChanged will handle loading the user
+            return null;
+          } else {
+            // If it's another error, fall through to google_sign_in fallback
+          }
+        } catch (e) {
+          debugPrint('⚠️ signInWithPopup unexpected error: $e. Will try google_sign_in fallback.');
+        }
+      }
+
       if (_googleSignIn == null) {
         throw AuthException('Google Sign-In not available on this device. Try Email sign-in instead.');
       }
-      
-      // Direct sign-in approach (like home.dart)
+
+      // Fallback path: google_sign_in package
       final googleUser = await _googleSignIn!.signIn();
-      
       if (googleUser == null) {
         debugPrint('🔐 Google sign-in cancelled by user');
         return null; // User cancelled, not an error
       }
-      
       debugPrint('✅ Google user obtained: ${googleUser.email}');
       final googleAuth = await googleUser.authentication;
-      
       if (googleAuth.accessToken == null || googleAuth.idToken == null) {
         debugPrint('❌ Failed to obtain Google authentication tokens');
         throw AuthException('Failed to obtain Google authentication tokens');
       }
-      
       debugPrint('🔐 Creating Firebase credential...');
       final credential = GoogleAuthProvider.credential(
         accessToken: googleAuth.accessToken,
         idToken: googleAuth.idToken,
       );
-      
       debugPrint('🔐 Signing in to Firebase...');
       final authResult = await _auth.signInWithCredential(credential);
-      
       if (authResult.user != null) {
         debugPrint('✅ Firebase authentication successful');
         return await _loadCurrentUser(authResult.user!);
       }
-      
       return null;
     } catch (e) {
       debugPrint('❌ Google sign-in failed: $e');
@@ -356,7 +394,7 @@ class AuthService {
   /// Load current user from database
   static Future<UserModel?> _loadCurrentUser(User firebaseUser) async {
     try {
-      debugPrint('🔐 Loading user data for: ${firebaseUser.uid}');
+  debugPrint('Loading user data');
       
       final userService = getIt<UserService>();
       UserModel? user = await userService.getUser(firebaseUser.uid);
@@ -415,6 +453,7 @@ class AuthService {
       _currentUser = user;
       _userController.add(user);
 
+
       // Trigger task generation for today (blocking) for all users with a family.
       // Wait for generation to complete so UI shows tasks immediately.
       try {
@@ -427,10 +466,10 @@ class AuthService {
                 date: DateTime.now(), 
                 familyId: user.familyId
               );
-          debugPrint('✅ Task generation complete for user $uid: ${generated.length} items');
+          debugPrint('Task generation complete for user $uid: ${generated.length} items');
         }
       } catch (e) {
-        debugPrint('⚠️ Task generation failed for user ${user.id}: $e');
+  debugPrint('Task generation failed for user ${user.id}: $e');
         // Don't block login on generation failure
       }
       
@@ -442,7 +481,7 @@ class AuthService {
       
       // No more task syncing - child tasks are assigned individually
       
-      debugPrint('✅ User loaded successfully: ${user.displayName}');
+    debugPrint('User loaded successfully: ${user.displayName}');
       return user;
     } catch (e) {
       debugPrint('❌ Failed to load user: $e');
