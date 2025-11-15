@@ -1,11 +1,11 @@
 {
-    "name": "ai_rewards_system",
-    "short_name": "ai_rewards_system",
+    "name": "AI Rewards",
+    "short_name": "AI Rewards",
     "start_url": ".",
     "display": "standalone",
     "background_color": "#0175C2",
     "theme_color": "#0175C2",
-    "description": "A new Flutter project.",
+    "description": "AI Rewards System - Manage reward points and gamification",
     "orientation": "portrait-primary",
     "prefer_related_applications": false,
     "icons": [

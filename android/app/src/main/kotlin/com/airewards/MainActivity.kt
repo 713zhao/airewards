@@ -1,4 +1,4 @@
-package com.example.ai_rewards
+package com.airewards
 
 import io.flutter.embedding.android.FlutterActivity
 

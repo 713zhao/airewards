@@ -18,6 +18,7 @@ import '../../core/theme/theme_extensions.dart';
 import '../../core/theme/theme_service.dart';
 import '../../features/testing/quality_assurance_dashboard.dart';
 import '../../shared/widgets/theme_demo_screen.dart';
+import '../../shared/widgets/banner_ad_widget.dart';
 import '../auth/login_screen.dart';
 import '../family/family_dashboard_screen.dart';
 import '../family/family_management_screen.dart';
@@ -270,6 +271,10 @@ class _MainAppScreenState extends State<MainAppScreen> {
       appBar: AppBar(
         title: const Text('AI Rewards System'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
+        bottom: PreferredSize(
+          preferredSize: const Size.fromHeight(90),
+          child: const BannerAdWidget(),
+        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.science),

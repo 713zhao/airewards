@@ -4,6 +4,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 
 import 'core/injection/injection.dart';
 import 'core/services/auth_service.dart';
+import 'core/services/ad_service.dart';
 import 'core/models/user_model.dart';
 import 'core/theme/theme_service.dart';
 import 'shared/widgets/network_status_indicator.dart';
@@ -24,6 +25,14 @@ void main() async {
     } catch (e) {
       // Continue without services for now
     }
+
+    // Initialize ads (AdMob for mobile, AdSense for web)
+    try {
+      await AdService().initialize();
+    } catch (e) {
+      debugPrint('⚠️ Ad initialization failed: $e');
+    }
+    
     runApp(const AIRewardsApp());
   } catch (e) {
     debugPrint('App initialization failed: $e');

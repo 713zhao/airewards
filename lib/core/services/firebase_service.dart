@@ -25,9 +25,22 @@ class FirebaseService {
   static Future<void> initialize(config.Environment environment) async {
     // Step 1: Core initialization must succeed
     try {
-      await Firebase.initializeApp(
-        options: DefaultFirebaseOptions.currentPlatform,
-      );
+      // On Web, always use options from firebase_options.dart
+      // On Android, prefer google-services.json by calling without options
+      // On other platforms, fall back to firebase_options.dart
+      if (kIsWeb) {
+        await Firebase.initializeApp(
+          options: DefaultFirebaseOptions.currentPlatform,
+        );
+      } else {
+        if (defaultTargetPlatform == TargetPlatform.android) {
+          await Firebase.initializeApp();
+        } else {
+          await Firebase.initializeApp(
+            options: DefaultFirebaseOptions.currentPlatform,
+          );
+        }
+      }
     } catch (e, _ ) {
       debugPrint('❌ Firebase.initializeApp failed: $e');
       // Core failure is fatal

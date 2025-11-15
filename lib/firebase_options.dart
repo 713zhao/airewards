@@ -54,30 +54,30 @@ class DefaultFirebaseOptions {
   );
 
   static const FirebaseOptions android = FirebaseOptions(
-    apiKey: 'AIzaSyC94wEqJRkmj-Q9O6XfARHc4Qe18Ks9r08',
-    appId: '1:439400799171:android:YOUR_ANDROID_APP_ID', // You'll need the actual Android app ID
-    messagingSenderId: '439400799171',
-    projectId: 'airewards-3bed2',
-    storageBucket: 'airewards-3bed2.firebasestorage.app',
+    apiKey: 'AIzaSyAm7WhS-LtqhKYdsQqIJfwYY7DBJzBOpNU',
+    appId: '1:755453095615:android:e875049341392bc6e2a00a',
+    messagingSenderId: '755453095615',
+    projectId: 'airewards-476909',
+    storageBucket: 'airewards-476909.firebasestorage.app',
   );
 
   static const FirebaseOptions ios = FirebaseOptions(
-    apiKey: 'AIzaSyC94wEqJRkmj-Q9O6XfARHc4Qe18Ks9r08',
-    appId: '1:439400799171:ios:YOUR_IOS_APP_ID', // You'll need the actual iOS app ID
-    messagingSenderId: '439400799171',
-    projectId: 'airewards-3bed2',
-    storageBucket: 'airewards-3bed2.firebasestorage.app',
-    iosClientId: 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com', // Needed for Google Sign-In on iOS
-    iosBundleId: 'com.example.aiRewardsSystem', // Your iOS bundle ID
+    apiKey: 'AIzaSyAm7WhS-LtqhKYdsQqIJfwYY7DBJzBOpNU',
+    appId: '1:755453095615:ios:YOUR_IOS_APP_ID', // Add iOS app in Firebase Console
+    messagingSenderId: '755453095615',
+    projectId: 'airewards-476909',
+    storageBucket: 'airewards-476909.firebasestorage.app',
+    iosClientId: '755453095615-c5v90iun8t5d21eujogqivqu1c0923kq.apps.googleusercontent.com',
+    iosBundleId: 'com.airewards',
   );
 
   static const FirebaseOptions macos = FirebaseOptions(
-    apiKey: 'AIzaSyC94wEqJRkmj-Q9O6XfARHc4Qe18Ks9r08',
-    appId: '1:439400799171:ios:YOUR_IOS_APP_ID', // Usually same as iOS
-    messagingSenderId: '439400799171',
-    projectId: 'airewards-3bed2',
-    storageBucket: 'airewards-3bed2.firebasestorage.app',
-    iosClientId: 'YOUR_IOS_CLIENT_ID.apps.googleusercontent.com',
-    iosBundleId: 'com.example.aiRewardsSystem',
+    apiKey: 'AIzaSyAm7WhS-LtqhKYdsQqIJfwYY7DBJzBOpNU',
+    appId: '1:755453095615:ios:YOUR_IOS_APP_ID',
+    messagingSenderId: '755453095615',
+    projectId: 'airewards-476909',
+    storageBucket: 'airewards-476909.firebasestorage.app',
+    iosClientId: '755453095615-c5v90iun8t5d21eujogqivqu1c0923kq.apps.googleusercontent.com',
+    iosBundleId: 'com.airewards',
   );
 }
