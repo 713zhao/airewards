@@ -1746,32 +1746,14 @@ class _MainAppScreenState extends State<MainAppScreen> {
   }
 
   Widget _buildTasksTab() {
-    final bool canModifySelectedDay = !_isSelectedDateInPast();
     return SingleChildScrollView(
       padding: const EdgeInsets.all(16),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
+          Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      _getSelectedDateTitle(),
-                      style: Theme.of(context).textTheme.headlineMedium,
-                    ),
-                    if (!_isToday())
-                      Text(
-                        _formatSelectedDateSubtitle(),
-                        style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                          color: Theme.of(context).colorScheme.onSurfaceVariant,
-                        ),
-                      ),
-                  ],
-                ),
-              ),
               Row(
                 mainAxisSize: MainAxisSize.min,
                 children: [
@@ -1834,31 +1816,16 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   ],
                 ],
               ),
-              const SizedBox(width: 8),
-              ElevatedButton.icon(
-                onPressed: canModifySelectedDay ? _quickEarnPoints : null,
-                icon: const Icon(Icons.flash_on, size: 18),
-                label: const Text('Quick Task'),
-                style: ElevatedButton.styleFrom(
-                  padding: const EdgeInsets.symmetric(
-                    horizontal: 12,
-                    vertical: 8,
-                  ),
-                  backgroundColor: Theme.of(context).colorScheme.primary,
-                  foregroundColor: Theme.of(context).colorScheme.onPrimary,
-                ),
+              const SizedBox(height: 8),
+              Text(
+                _getSelectedDateTitle(),
+                style: Theme.of(context).textTheme.headlineMedium,
               ),
-              const SizedBox(width: 8),
-              if (_shouldShowAddTaskButton())
-                OutlinedButton.icon(
-                  onPressed: canModifySelectedDay ? _addNewTask : null,
-                  icon: const Icon(Icons.add_task, size: 18),
-                  label: const Text('Add Task'),
-                  style: OutlinedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                      horizontal: 12,
-                      vertical: 8,
-                    ),
+              if (!_isToday())
+                Text(
+                  _formatSelectedDateSubtitle(),
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
                   ),
                 ),
             ],
@@ -2384,6 +2351,9 @@ class _MainAppScreenState extends State<MainAppScreen> {
             Expanded(
               child: Text(
                 task.title,
+                maxLines: 2,
+                softWrap: true,
+                overflow: TextOverflow.ellipsis,
                 style: TextStyle(
                   decoration: isCompleted ? TextDecoration.lineThrough : null,
                   fontWeight: FontWeight.w500,
@@ -2403,54 +2373,49 @@ class _MainAppScreenState extends State<MainAppScreen> {
               ),
           ],
         ),
-        subtitle: Row(
+        subtitle: Wrap(
+          spacing: 6,
+          runSpacing: 4,
+          crossAxisAlignment: WrapCrossAlignment.center,
           children: [
-            Expanded(
-              child: Row(
-                children: [
-                  Text(
-                    '${task.category} • ${task.pointValue} points',
-                    style: TextStyle(
-                      color: isCompleted
-                          ? Theme.of(context).colorScheme.onSurfaceVariant
-                          : null,
-                    ),
-                  ),
-                  if (task.dueDate != null) ...[
-                    Text(
-                      ' • Due: ${_formatTaskDate(task.dueDate!)}',
-                      style: TextStyle(
-                        color: isCompleted
-                            ? Theme.of(context).colorScheme.onSurfaceVariant
-                            : (task.isOverdue ? Colors.red : null),
-                        fontWeight: task.isOverdue && !isCompleted
-                            ? FontWeight.w600
-                            : null,
-                      ),
-                    ),
-                  ],
-                  if (task.dueDate == null)
-                    Text(
-                      ' • Anytime',
-                      style: TextStyle(
-                        color: Theme.of(
-                          context,
-                        ).colorScheme.onSurfaceVariant.withOpacity(0.7),
-                      ),
-                    ),
-                  if (isCompleted && task.completedAt != null) ...[
-                    Text(
-                      ' • Completed: ${_formatTaskDate(task.completedAt!)}',
-                      style: TextStyle(
-                        color: Colors.green,
-                        fontWeight: FontWeight.w500,
-                        fontSize: 12,
-                      ),
-                    ),
-                  ],
-                ],
+            Text(
+              '${task.category} • ${task.pointValue} points',
+              style: TextStyle(
+                color: isCompleted
+                    ? Theme.of(context).colorScheme.onSurfaceVariant
+                    : null,
               ),
             ),
+            if (task.dueDate != null)
+              Text(
+                '• Due: ${_formatTaskDate(task.dueDate!)}',
+                style: TextStyle(
+                  color: isCompleted
+                      ? Theme.of(context).colorScheme.onSurfaceVariant
+                      : (task.isOverdue ? Colors.red : null),
+                  fontWeight:
+                      task.isOverdue && !isCompleted ? FontWeight.w600 : null,
+                ),
+              )
+            else
+              Text(
+                '• Anytime',
+                style: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurfaceVariant
+                      .withOpacity(0.7),
+                ),
+              ),
+            if (isCompleted && task.completedAt != null)
+              Text(
+                '• Completed: ${_formatTaskDate(task.completedAt!)}',
+                style: const TextStyle(
+                  color: Colors.green,
+                  fontWeight: FontWeight.w500,
+                  fontSize: 12,
+                ),
+              ),
           ],
         ),
         trailing: isCompleted
