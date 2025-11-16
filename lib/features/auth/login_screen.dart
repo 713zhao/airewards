@@ -27,42 +27,111 @@ class _LoginScreenState extends State<LoginScreen> {
   String? _errorMessage;
   AccountType _selectedAccountType = AccountType.parent;
   
+  // Saved accounts for autocomplete
+  List<Map<String, String>> _savedAccounts = [];
+  List<Map<String, String>> _filteredAccounts = [];
+  bool _showAccountSuggestions = false;
+  
 
   @override
   void initState() {
     super.initState();
-    _loadLastEmail();
+    _loadSavedAccounts();
+    _emailController.addListener(_onEmailChanged);
   }
 
   @override
   void dispose() {
+    _emailController.removeListener(_onEmailChanged);
     _emailController.dispose();
     _passwordController.dispose();
     _nameController.dispose();
     super.dispose();
   }
 
-  /// Load the last used email from SharedPreferences
-  Future<void> _loadLastEmail() async {
+  /// Load saved accounts from SharedPreferences
+  Future<void> _loadSavedAccounts() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final lastEmail = prefs.getString('last_email');
-      if (lastEmail != null && lastEmail.isNotEmpty) {
-        _emailController.text = lastEmail;
-      }
+      final accountsJson = prefs.getStringList('saved_accounts') ?? [];
+      
+      setState(() {
+        _savedAccounts = accountsJson.map((json) {
+          final parts = json.split('|||');
+          return {
+            'email': parts[0],
+            'password': parts.length > 1 ? parts[1] : '',
+          };
+        }).toList();
+        
+        // Load last used email
+        if (_savedAccounts.isNotEmpty) {
+          _emailController.text = _savedAccounts.first['email'] ?? '';
+          _passwordController.text = _savedAccounts.first['password'] ?? '';
+        }
+      });
     } catch (e) {
       // ignore errors
     }
   }
 
-  /// Save the email to SharedPreferences for next time
-  Future<void> _saveLastEmail(String email) async {
+  /// Save account credentials
+  Future<void> _saveAccount(String email, String password) async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setString('last_email', email);
+      
+      // Remove existing entry for this email
+      _savedAccounts.removeWhere((account) => account['email'] == email);
+      
+      // Add to beginning (most recent first)
+      _savedAccounts.insert(0, {
+        'email': email,
+        'password': password,
+      });
+      
+      // Keep only last 5 accounts
+      if (_savedAccounts.length > 5) {
+        _savedAccounts = _savedAccounts.take(5).toList();
+      }
+      
+      // Save to SharedPreferences
+      final accountsJson = _savedAccounts.map((account) {
+        return '${account['email']}|||${account['password']}';
+      }).toList();
+      
+      await prefs.setStringList('saved_accounts', accountsJson);
     } catch (e) {
       // ignore errors
     }
+  }
+
+  /// Filter accounts based on email input
+  void _onEmailChanged() {
+    final query = _emailController.text.toLowerCase();
+    
+    if (query.isEmpty) {
+      setState(() {
+        _showAccountSuggestions = false;
+        _filteredAccounts = [];
+      });
+      return;
+    }
+    
+    setState(() {
+      _filteredAccounts = _savedAccounts.where((account) {
+        return account['email']!.toLowerCase().contains(query);
+      }).toList();
+      _showAccountSuggestions = _filteredAccounts.isNotEmpty && !_isSignUp;
+    });
+  }
+
+  /// Select a saved account
+  void _selectAccount(Map<String, String> account) {
+    setState(() {
+      _emailController.text = account['email'] ?? '';
+      _passwordController.text = account['password'] ?? '';
+      _showAccountSuggestions = false;
+    });
   }
 
   @override
@@ -218,24 +287,81 @@ class _LoginScreenState extends State<LoginScreen> {
                 const SizedBox(height: 16),
               ],
               
-              // Email field
-              TextFormField(
-                controller: _emailController,
-                keyboardType: TextInputType.emailAddress,
-                decoration: const InputDecoration(
-                  labelText: 'Email',
-                  hintText: 'Enter your email address',
-                  prefixIcon: Icon(Icons.email),
-                ),
-                validator: (value) {
-                  if (value == null || value.trim().isEmpty) {
-                    return 'Please enter your email';
-                  }
-                  if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
-                    return 'Please enter a valid email address';
-                  }
-                  return null;
-                },
+              // Email field with autocomplete
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  TextFormField(
+                    controller: _emailController,
+                    keyboardType: TextInputType.emailAddress,
+                    decoration: InputDecoration(
+                      labelText: 'Email',
+                      hintText: 'Enter your email address',
+                      prefixIcon: const Icon(Icons.email),
+                      suffixIcon: _savedAccounts.isNotEmpty
+                          ? IconButton(
+                              icon: const Icon(Icons.arrow_drop_down),
+                              onPressed: () {
+                                setState(() {
+                                  _filteredAccounts = _savedAccounts;
+                                  _showAccountSuggestions = !_showAccountSuggestions && !_isSignUp;
+                                });
+                              },
+                            )
+                          : null,
+                    ),
+                    validator: (value) {
+                      if (value == null || value.trim().isEmpty) {
+                        return 'Please enter your email';
+                      }
+                      if (!RegExp(r'^[\w-\.]+@([\w-]+\.)+[\w-]{2,4}$').hasMatch(value)) {
+                        return 'Please enter a valid email address';
+                      }
+                      return null;
+                    },
+                  ),
+                  
+                  // Account suggestions dropdown
+                  if (_showAccountSuggestions && _filteredAccounts.isNotEmpty)
+                    Container(
+                      margin: const EdgeInsets.only(top: 4),
+                      decoration: BoxDecoration(
+                        color: Theme.of(context).colorScheme.surfaceContainerHighest,
+                        borderRadius: BorderRadius.circular(8),
+                        border: Border.all(
+                          color: Theme.of(context).colorScheme.outline.withOpacity(0.5),
+                        ),
+                      ),
+                      constraints: const BoxConstraints(maxHeight: 200),
+                      child: ListView.builder(
+                        shrinkWrap: true,
+                        itemCount: _filteredAccounts.length,
+                        itemBuilder: (context, index) {
+                          final account = _filteredAccounts[index];
+                          return ListTile(
+                            dense: true,
+                            leading: CircleAvatar(
+                              backgroundColor: Theme.of(context).colorScheme.primary,
+                              radius: 16,
+                              child: Text(
+                                account['email']!.substring(0, 1).toUpperCase(),
+                                style: TextStyle(
+                                  color: Theme.of(context).colorScheme.onPrimary,
+                                  fontSize: 14,
+                                ),
+                              ),
+                            ),
+                            title: Text(
+                              account['email']!,
+                              style: const TextStyle(fontSize: 14),
+                            ),
+                            trailing: const Icon(Icons.login, size: 18),
+                            onTap: () => _selectAccount(account),
+                          );
+                        },
+                      ),
+                    ),
+                ],
               ),
               
               const SizedBox(height: 16),
@@ -406,8 +532,9 @@ class _LoginScreenState extends State<LoginScreen> {
       }
 
       if (user != null && mounted) {
-        // Save email for next time
-        await _saveLastEmail(_emailController.text.trim());
+        // Save account credentials: password only for child accounts
+        final password = user.accountType == AccountType.child ? _passwordController.text : '';
+        await _saveAccount(_emailController.text.trim(), password);
         _navigateToMainApp();
       } else {
         // no-op
@@ -433,9 +560,9 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final user = await AuthService.signInWithGoogle();
       if (user != null && mounted) {
-        // Save Google email for next time
+        // Save Google account (no password for OAuth)
         if (user.email.isNotEmpty) {
-          await _saveLastEmail(user.email);
+          await _saveAccount(user.email, '');
         }
         _navigateToMainApp();
       }
