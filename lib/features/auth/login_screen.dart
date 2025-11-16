@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 // import 'package:firebase_auth/firebase_auth.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/models/user_model.dart';
@@ -32,6 +33,11 @@ class _LoginScreenState extends State<LoginScreen> {
   List<Map<String, String>> _filteredAccounts = [];
   bool _showAccountSuggestions = false;
   
+  // Helpers for consistent, case-insensitive secure storage keys
+  String _normalizeEmail(String email) => email.trim().toLowerCase();
+  String _normalizedKeyForEmail(String email) => 'pwd_${_normalizeEmail(email)}';
+  String _legacyKeyForEmail(String email) => 'pwd_${email.trim()}';
+  
 
   @override
   void initState() {
@@ -49,65 +55,107 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
-  /// Load saved accounts from SharedPreferences
+  /// Load saved accounts (emails from SharedPreferences, passwords from secure storage)
   Future<void> _loadSavedAccounts() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final accountsJson = prefs.getStringList('saved_accounts') ?? [];
+      const secureStorage = FlutterSecureStorage();
       
-      setState(() {
-        _savedAccounts = accountsJson.map((json) {
-          final parts = json.split('|||');
-          return {
-            'email': parts[0],
-            'password': parts.length > 1 ? parts[1] : '',
-          };
-        }).toList();
-        
-        // Load last used email
-        if (_savedAccounts.isNotEmpty) {
-          _emailController.text = _savedAccounts.first['email'] ?? '';
-          _passwordController.text = _savedAccounts.first['password'] ?? '';
+      final savedEmails = prefs.getStringList('saved_emails') ?? [];
+      
+      final accounts = <Map<String, String>>[];
+      for (final email in savedEmails) {
+        // Read password from secure storage (try normalized first, then legacy key for compatibility)
+        String password = await secureStorage.read(key: _normalizedKeyForEmail(email)) ?? '';
+        if (password.isEmpty) {
+          final legacy = await secureStorage.read(key: _legacyKeyForEmail(email)) ?? '';
+          if (legacy.isNotEmpty) {
+            // Migrate legacy key to normalized key for future reads
+            await secureStorage.write(key: _normalizedKeyForEmail(email), value: legacy);
+            await secureStorage.delete(key: _legacyKeyForEmail(email));
+            password = legacy;
+          }
         }
-      });
+        accounts.add({
+          'email': email,
+          'password': password,
+        });
+      }
+      
+      if (mounted) {
+        setState(() {
+          _savedAccounts = accounts;
+          
+          // Load last used email and password
+          if (_savedAccounts.isNotEmpty) {
+            _emailController.text = _savedAccounts.first['email'] ?? '';
+            _passwordController.text = _savedAccounts.first['password'] ?? '';
+          }
+        });
+      }
     } catch (e) {
-      // ignore errors
+      // swallow debug logs in release
     }
   }
 
-  /// Save account credentials
+  /// Save account credentials (email in SharedPreferences, password in secure storage)
   Future<void> _saveAccount(String email, String password) async {
     try {
       final prefs = await SharedPreferences.getInstance();
+      const secureStorage = FlutterSecureStorage();
       
-      // Remove existing entry for this email
-      _savedAccounts.removeWhere((account) => account['email'] == email);
+      // Get existing emails
+      final savedEmails = prefs.getStringList('saved_emails') ?? [];
+      
+      // Remove existing entry for this email (case-insensitive)
+      savedEmails.removeWhere((e) => e.toLowerCase() == email.trim().toLowerCase());
       
       // Add to beginning (most recent first)
-      _savedAccounts.insert(0, {
-        'email': email,
-        'password': password,
-      });
+      savedEmails.insert(0, email.trim());
       
       // Keep only last 5 accounts
-      if (_savedAccounts.length > 5) {
-        _savedAccounts = _savedAccounts.take(5).toList();
+      if (savedEmails.length > 5) {
+        // Remove password from secure storage for the oldest account
+        final oldestEmail = savedEmails.last;
+        await secureStorage.delete(key: _normalizedKeyForEmail(oldestEmail));
+        await secureStorage.delete(key: _legacyKeyForEmail(oldestEmail));
+        savedEmails.removeLast();
       }
       
-      // Save to SharedPreferences
-      final accountsJson = _savedAccounts.map((account) {
-        return '${account['email']}|||${account['password']}';
-      }).toList();
+      // Save email list to SharedPreferences
+      await prefs.setStringList('saved_emails', savedEmails);
       
-      await prefs.setStringList('saved_accounts', accountsJson);
+      // Save password to secure storage (encrypted)
+      if (password.isNotEmpty) {
+        await secureStorage.write(key: _normalizedKeyForEmail(email), value: password);
+      } else {
+        // Remove password if empty (parent account or OAuth)
+        await secureStorage.delete(key: _normalizedKeyForEmail(email));
+        await secureStorage.delete(key: _legacyKeyForEmail(email));
+      }
+      
+      // Update in-memory list immediately
+      if (mounted) {
+        setState(() {
+          _savedAccounts.removeWhere((account) => account['email'] == email);
+          _savedAccounts.insert(0, {
+            'email': email,
+            'password': password,
+          });
+          if (_savedAccounts.length > 5) {
+            _savedAccounts = _savedAccounts.take(5).toList();
+          }
+        });
+      }
     } catch (e) {
-      // ignore errors
+      // swallow debug logs in release
     }
   }
 
   /// Filter accounts based on email input
-  void _onEmailChanged() {
-    final query = _emailController.text.toLowerCase();
+  void _onEmailChanged() async {
+    final raw = _emailController.text;
+    final query = raw.toLowerCase();
     
     if (query.isEmpty) {
       setState(() {
@@ -123,15 +171,44 @@ class _LoginScreenState extends State<LoginScreen> {
       }).toList();
       _showAccountSuggestions = _filteredAccounts.isNotEmpty && !_isSignUp;
     });
+
+    // If typed email exactly matches a saved account (case-insensitive), auto-fill password
+    final exact = _savedAccounts.where((a) => (a['email'] ?? '').toLowerCase() == query).toList();
+    if (exact.isNotEmpty) {
+      final account = exact.first;
+      var pwd = account['password'] ?? '';
+      if (pwd.isEmpty) {
+        // Fallback: fetch from secure storage using normalized key
+        const secureStorage = FlutterSecureStorage();
+        pwd = await secureStorage.read(key: _normalizedKeyForEmail(raw)) ?? '';
+      }
+      if (pwd.isNotEmpty && mounted) {
+        setState(() {
+          _passwordController.text = pwd;
+        });
+      }
+    }
   }
 
   /// Select a saved account
-  void _selectAccount(Map<String, String> account) {
-    setState(() {
-      _emailController.text = account['email'] ?? '';
-      _passwordController.text = account['password'] ?? '';
-      _showAccountSuggestions = false;
-    });
+  void _selectAccount(Map<String, String> account) async {
+    var email = account['email'] ?? '';
+    var password = account['password'] ?? '';
+    if (password.isEmpty && email.isNotEmpty) {
+      // Fallback to secure storage if in-memory password is empty
+      const secureStorage = FlutterSecureStorage();
+      final fetched = await secureStorage.read(key: _normalizedKeyForEmail(email)) ?? '';
+      if (fetched.isNotEmpty) {
+        password = fetched;
+      }
+    }
+    if (mounted) {
+      setState(() {
+        _emailController.text = email;
+        _passwordController.text = password;
+        _showAccountSuggestions = false;
+      });
+    }
   }
 
   @override
@@ -534,6 +611,7 @@ class _LoginScreenState extends State<LoginScreen> {
       if (user != null && mounted) {
         // Save account credentials: password only for child accounts
         final password = user.accountType == AccountType.child ? _passwordController.text : '';
+        debugPrint('💾 Saving account - Email: ${_emailController.text.trim()}, AccountType: ${user.accountType}, Password length: ${password.length}');
         await _saveAccount(_emailController.text.trim(), password);
         _navigateToMainApp();
       } else {
