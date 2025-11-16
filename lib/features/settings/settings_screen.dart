@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/family_service.dart';
-import '../../core/services/task_service.dart';
 import '../../core/services/reward_service.dart';
 import '../../core/injection/injection.dart';
 import '../../core/services/data_deletion_service.dart';

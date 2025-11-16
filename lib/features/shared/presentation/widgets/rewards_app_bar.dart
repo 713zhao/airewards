@@ -219,7 +219,7 @@ class FilterBottomSheet extends StatefulWidget {
 
 class _FilterBottomSheetState extends State<FilterBottomSheet> {
   DateTimeRange? _dateRange;
-  Set<String> _selectedCategories = {};
+  final Set<String> _selectedCategories = {};
   RangeValues _pointRange = const RangeValues(0, 1000);
 
   @override

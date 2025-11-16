@@ -163,16 +163,16 @@ class _MainAppScreenState extends State<MainAppScreen> {
                     FloatingActionButton(
                       onPressed: _addNewTask,
                       heroTag: "add_task",
-                      child: const Icon(Icons.add_task),
                       tooltip: 'Add Task',
+                      child: const Icon(Icons.add_task),
                     ),
                     const SizedBox(height: 8),
                     FloatingActionButton(
                       onPressed: _quickEarnPoints,
                       heroTag: "quick_task",
                       backgroundColor: Theme.of(context).colorScheme.secondary,
-                      child: const Icon(Icons.flash_on),
                       tooltip: 'Quick Task',
+                      child: const Icon(Icons.flash_on),
                     ),
                   ],
                 )
@@ -718,7 +718,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                     icon: const Icon(Icons.chevron_left),
                     tooltip: 'Previous Day',
                     style: IconButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
                     ),
                   ),
                   IconButton(
@@ -737,7 +737,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                     icon: const Icon(Icons.chevron_right),
                     tooltip: 'Next Day',
                     style: IconButton.styleFrom(
-                      backgroundColor: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.5),
+                      backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.5),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -1034,7 +1034,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              ...regularTasks.map((task) => _buildTaskItemFromModel(task)).toList(),
+              ...regularTasks.map((task) => _buildTaskItemFromModel(task)),
               const SizedBox(height: 8),
               Card(
                 color: Theme.of(context).colorScheme.primaryContainer.withOpacity(0.3),
@@ -1072,7 +1072,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                 ),
               ),
               const SizedBox(height: 12),
-              ...selectedRedemptions.map((redemption) => _buildRedemptionHistoryCard(redemption)).toList(),
+              ...selectedRedemptions.map((redemption) => _buildRedemptionHistoryCard(redemption)),
               const SizedBox(height: 8),
               Card(
                 color: Theme.of(context).colorScheme.errorContainer.withOpacity(0.3),
@@ -1799,7 +1799,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                                     children: [
                                       Expanded(
                                         child: Text(
-                                          user!.familyId!,
+                                          user.familyId!,
                                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                                             fontWeight: FontWeight.bold,
                                             color: Theme.of(context).colorScheme.primary,
@@ -2646,7 +2646,7 @@ class _TaskHistoryScreenState extends State<TaskHistoryScreen> {
               children: [
                 _buildOverallSummary(historyData, theme),
                 const SizedBox(height: 24),
-                ...historyData.map((dayData) => _buildDaySection(dayData, theme)).toList(),
+                ...historyData.map((dayData) => _buildDaySection(dayData, theme)),
               ],
             ),
           );
@@ -2814,7 +2814,7 @@ class _TaskHistoryScreenState extends State<TaskHistoryScreen> {
               )
             else ...[
               const SizedBox(height: 12),
-              ...dayData.tasks.map((task) => _buildHistoryTaskItem(task, theme)).toList(),
+              ...dayData.tasks.map((task) => _buildHistoryTaskItem(task, theme)),
             ],
           ],
         ),
@@ -2832,7 +2832,7 @@ class _TaskHistoryScreenState extends State<TaskHistoryScreen> {
       decoration: BoxDecoration(
         color: isRedemption 
             ? Colors.red.withOpacity(0.05)
-            : theme.colorScheme.surfaceVariant.withOpacity(0.3),
+            : theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border(
           left: BorderSide(
@@ -2950,7 +2950,7 @@ class _TaskHistoryScreenState extends State<TaskHistoryScreen> {
     final period = hour >= 12 ? 'PM' : 'AM';
     final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
     
-    return '${displayHour}:${minute.toString().padLeft(2, '0')} $period';
+    return '$displayHour:${minute.toString().padLeft(2, '0')} $period';
   }
 }
 

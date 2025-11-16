@@ -2,6 +2,7 @@
 /// 
 /// This file exports all the entities in the rewards domain for easy importing
 /// across the application.
+library;
 
 export 'reward_entry.dart';
 export 'reward_category.dart';

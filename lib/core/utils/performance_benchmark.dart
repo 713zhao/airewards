@@ -5,7 +5,6 @@ import 'package:flutter/scheduler.dart';
 
 import '../services/performance_service.dart';
 import '../services/memory_management_service.dart';
-import '../widgets/optimized_widgets.dart';
 
 /// Performance benchmark runner for AI Rewards System
 class PerformanceBenchmark {
@@ -312,7 +311,7 @@ class BenchmarkWidget extends StatefulWidget {
 
 class _BenchmarkWidgetState extends State<BenchmarkWidget>
     with TickerProviderStateMixin {
-  List<BenchmarkResult> _results = [];
+  final List<BenchmarkResult> _results = [];
   bool _isRunning = false;
   String _currentTest = '';
 
@@ -375,7 +374,7 @@ class _BenchmarkWidgetState extends State<BenchmarkWidget>
                     
                     if (_isRunning) ...[
                       LinearProgressIndicator(
-                        backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                        backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                       ),
                       const SizedBox(height: 8),
                       Text(

@@ -363,8 +363,9 @@ class RecurrencePattern {
 
     int interval = 1;
     try {
-      if (map['interval'] is int) interval = map['interval'] as int;
-      else if (map['interval'] != null) interval = int.parse(map['interval'].toString());
+      if (map['interval'] is int) {
+        interval = map['interval'] as int;
+      } else if (map['interval'] != null) interval = int.parse(map['interval'].toString());
     } catch (_) {
       interval = 1;
     }

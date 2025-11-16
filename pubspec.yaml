@@ -73,6 +73,9 @@ dependencies:
   device_info_plus: ^10.1.2
   package_info_plus: ^8.0.2
 
+  encrypt: any
+  go_router: any
+  rxdart: any
 dev_dependencies:
   flutter_test:
     sdk: flutter
@@ -91,7 +94,6 @@ dev_dependencies:
   firebase_auth_mocks: ^0.14.1
   google_sign_in_mocks: ^0.3.0
   sqflite_common_ffi: ^2.3.3
-
 flutter:
   uses-material-design: true
 

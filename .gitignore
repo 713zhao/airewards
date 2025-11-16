@@ -99,6 +99,11 @@ app.*.map.json
 .env.production
 .env.test
 
+# Android signing keys (NEVER commit these!)
+**/android/key.properties
+**/android/app/*.jks
+**/android/app/*.keystore
+
 # Coverage
 coverage/
 lcov.info

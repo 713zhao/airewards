@@ -13,7 +13,7 @@ class _FirestoreTestScreenState extends State<FirestoreTestScreen> {
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
   
-  List<String> _results = [];
+  final List<String> _results = [];
 
   void _addResult(String result) {
     setState(() {

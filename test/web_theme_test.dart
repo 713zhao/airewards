@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/core/theme/app_theme.dart';
-import '../lib/core/theme/app_colors.dart';
+import 'package:ai_rewards_system/core/theme/app_theme.dart';
+import 'package:ai_rewards_system/core/theme/app_colors.dart';
 
 /// Web-specific theme tests to ensure the theme system works correctly
 /// in the web environment with all Material Design 3 components.
@@ -91,7 +91,7 @@ void main() {
       expect(lightScheme.secondary, isNotNull);
       expect(lightScheme.tertiary, isNotNull);
       expect(lightScheme.error, isNotNull);
-      expect(lightScheme.background, isNotNull);
+      expect(lightScheme.surface, isNotNull);
       expect(lightScheme.surface, isNotNull);
 
       // Verify dark scheme completeness
@@ -99,7 +99,7 @@ void main() {
       expect(darkScheme.secondary, isNotNull);
       expect(darkScheme.tertiary, isNotNull);
       expect(darkScheme.error, isNotNull);
-      expect(darkScheme.background, isNotNull);
+      expect(darkScheme.surface, isNotNull);
       expect(darkScheme.surface, isNotNull);
     });
 

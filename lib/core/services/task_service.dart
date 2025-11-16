@@ -52,7 +52,7 @@ class TaskService {
 
     try {
       final familyService = _testFamilyService ?? getIt<FamilyService>();
-      return await familyService.canManageTasks(currentUser);
+      return familyService.canManageTasks(currentUser);
     } catch (e) {
       // Fallback to checking account type directly
       return currentUser.hasManagementPermissions;
@@ -220,7 +220,7 @@ class TaskService {
     }
 
     if (effectiveFamilyId == null) {
-      print('📊 getFamilyTasks - No familyId available (current: ${_currentFamilyId}, resolved: $effectiveFamilyId). Returning empty stream.');
+      print('📊 getFamilyTasks - No familyId available (current: $_currentFamilyId, resolved: $effectiveFamilyId). Returning empty stream.');
       yield <TaskModel>[];
       return;
     }
@@ -237,8 +237,8 @@ class TaskService {
 
   yield* query.snapshots().map((snapshot) {
       print('\n📊 Task Query Results:');
-      print('  Auth User ID: ${_currentUserId}');
-      print('  Current Family ID (from profile): ${_currentFamilyId}');
+      print('  Auth User ID: $_currentUserId');
+      print('  Current Family ID (from profile): $_currentFamilyId');
       print('  Effective Family ID (used in query): $effectiveFamilyId');
       print('  AssignedTo filter: ${assignedToUserId ?? '(none)'}');
       print('  Raw Result Count: ${snapshot.docs.length}');
@@ -1008,7 +1008,7 @@ class TaskService {
     final dateKey = '${d.year.toString().padLeft(4,'0')}-${d.month.toString().padLeft(2,'0')}-${d.day.toString().padLeft(2,'0')}';
     
     // Check if primary instance (without timestamp) exists
-    final primaryId = '${templateId}_${userId}_${dateKey}';
+    final primaryId = '${templateId}_${userId}_$dateKey';
     final primaryRef = _firestore.collection('task_history').doc(primaryId);
     final primaryExists = await primaryRef.get();
     
@@ -1022,7 +1022,7 @@ class TaskService {
     } else {
       // Primary exists, create additional instance with timestamp
       final timestamp = DateTime.now().millisecondsSinceEpoch;
-      id = '${templateId}_${userId}_${dateKey}_${timestamp}';
+      id = '${templateId}_${userId}_${dateKey}_$timestamp';
       ref = _firestore.collection('task_history').doc(id);
       print('✨ Creating additional quick task instance: $id (duplicate allowed)');
     }

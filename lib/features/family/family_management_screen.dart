@@ -29,7 +29,7 @@ class _FamilyManagementScreenState extends State<FamilyManagementScreen> {
   bool _isCreatingFamily = false;
   Family? _currentFamily;
   List<UserModel> _children = [];
-  Map<String, int> _childrenTodayPoints = {}; // Real-time points from today's activities
+  final Map<String, int> _childrenTodayPoints = {}; // Real-time points from today's activities
   String? _generatedInvitationCode;
 
   @override
@@ -468,7 +468,7 @@ class _FamilyManagementScreenState extends State<FamilyManagementScreen> {
       child: Container(
         padding: const EdgeInsets.all(16),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+          color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
           borderRadius: BorderRadius.circular(8),
         ),
         child: Column(
@@ -533,7 +533,7 @@ class _FamilyManagementScreenState extends State<FamilyManagementScreen> {
                 ),
               )
             else
-              ..._children.map((child) => _buildChildCard(child)).toList(),
+              ..._children.map((child) => _buildChildCard(child)),
           ],
         ),
       ),

@@ -18,7 +18,7 @@ class _ProfileScreenState extends State<ProfileScreen> {
   bool _isLoading = false;
   UserModel? _currentUser;
   Map<String, dynamic>? _userStats;
-  List<Map<String, dynamic>> _recentAchievements = [];
+  final List<Map<String, dynamic>> _recentAchievements = [];
   
   late UserService _userService;
   late TaskService _taskService;

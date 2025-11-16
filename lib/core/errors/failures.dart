@@ -16,7 +16,7 @@ abstract class Failure extends Equatable {
 
 /// Network-related failures
 class NetworkFailure extends Failure {
-  const NetworkFailure(String message, [int? code]) : super(message, code);
+  const NetworkFailure(super.message, [super.code]);
 
   const NetworkFailure.timeout() : super('Connection timeout');
   const NetworkFailure.noConnection() : super('No internet connection');
@@ -29,7 +29,7 @@ class NetworkFailure extends Failure {
 
 /// Authentication failures
 class AuthFailure extends Failure {
-  const AuthFailure(String message, [int? code]) : super(message, code);
+  const AuthFailure(super.message, [super.code]);
 
   const AuthFailure.invalidCredentials() : super('Invalid email or password');
   const AuthFailure.userNotFound() : super('User account not found');
@@ -48,7 +48,7 @@ class AuthFailure extends Failure {
 
 /// Database failures
 class DatabaseFailure extends Failure {
-  const DatabaseFailure(String message, [int? code]) : super(message, code);
+  const DatabaseFailure(super.message, [super.code]);
 
   const DatabaseFailure.notFound() : super('Data not found');
   const DatabaseFailure.insertFailed() : super('Failed to save data');
@@ -61,7 +61,7 @@ class DatabaseFailure extends Failure {
 
 /// Cache failures
 class CacheFailure extends Failure {
-  const CacheFailure(String message, [int? code]) : super(message, code);
+  const CacheFailure(super.message, [super.code]);
 
   const CacheFailure.notFound() : super('Cache data not found');
   const CacheFailure.expired() : super('Cache data expired');
@@ -74,7 +74,7 @@ class CacheFailure extends Failure {
 class ValidationFailure extends Failure {
   final Map<String, String>? fieldErrors;
 
-  const ValidationFailure(String message, [this.fieldErrors]) : super(message);
+  const ValidationFailure(super.message, [this.fieldErrors]);
 
   const ValidationFailure.invalidEmail() : fieldErrors = null, super('Invalid email address');
   const ValidationFailure.invalidPassword() : fieldErrors = null, super('Invalid password');
@@ -88,7 +88,7 @@ class ValidationFailure extends Failure {
 
 /// Permission failures
 class PermissionFailure extends Failure {
-  const PermissionFailure(String message, [int? code]) : super(message, code);
+  const PermissionFailure(super.message, [super.code]);
 
   const PermissionFailure.denied() : super('Permission denied');
   const PermissionFailure.restricted() : super('Permission restricted');
@@ -98,7 +98,7 @@ class PermissionFailure extends Failure {
 
 /// Business logic failures
 class BusinessLogicFailure extends Failure {
-  const BusinessLogicFailure(String message, [int? code]) : super(message, code);
+  const BusinessLogicFailure(super.message, [super.code]);
 
   const BusinessLogicFailure.insufficientPoints() : super('Insufficient reward points');
   const BusinessLogicFailure.itemUnavailable() : super('Item is not available');
@@ -109,5 +109,5 @@ class BusinessLogicFailure extends Failure {
 
 /// Generic failure for unknown errors
 class GenericFailure extends Failure {
-  const GenericFailure(String message, [int? code]) : super(message, code);
+  const GenericFailure(super.message, [super.code]);
 }

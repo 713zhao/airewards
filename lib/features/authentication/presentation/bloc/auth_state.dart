@@ -48,6 +48,7 @@ class AuthLoading extends AuthState {
 
 /// State when user is authenticated
 class AuthAuthenticated extends AuthState {
+  @override
   final User user;
   final bool isEmailVerified;
   final bool biometricEnabled;
@@ -153,6 +154,7 @@ class AuthBiometricAvailable extends AuthState {
 
 /// State when session is about to expire
 class AuthSessionExpiring extends AuthState {
+  @override
   final User user;
   final Duration timeRemaining;
   final bool canExtend;

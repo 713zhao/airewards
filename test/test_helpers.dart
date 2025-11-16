@@ -1,12 +1,11 @@
 import 'package:flutter_test/flutter_test.dart';
 import 'package:mocktail/mocktail.dart';
-import 'package:bloc_test/bloc_test.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
-import '../lib/core/errors/failures.dart';
-import '../lib/core/utils/either.dart';
-import '../lib/features/analytics/domain/repositories/analytics_repository.dart';
-import '../lib/features/profile/domain/repositories/profile_repository.dart';
+import 'package:ai_rewards_system/core/errors/failures.dart';
+import 'package:ai_rewards_system/core/utils/either.dart';
+import 'package:ai_rewards_system/features/analytics/domain/repositories/analytics_repository.dart';
+import 'package:ai_rewards_system/features/profile/domain/repositories/profile_repository.dart';
 
 /// Mock classes for testing
 class MockAnalyticsRepository extends Mock implements AnalyticsRepository {}

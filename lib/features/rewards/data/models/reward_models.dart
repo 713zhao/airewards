@@ -74,6 +74,7 @@ class RewardEntryModel extends RewardEntry {
   }
   
   /// Converts to JSON map
+  @override
   Map<String, dynamic> toJson() {
     return {
       'id': id,
@@ -244,6 +245,7 @@ class CategoryModel extends RewardCategory {
   }
   
   /// Converts to JSON map
+  @override
   Map<String, dynamic> toJson() {
     return {
       'id': id,

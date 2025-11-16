@@ -2,6 +2,7 @@
 /// 
 /// This file exports all the use cases in the rewards domain
 /// for easy importing across the application.
+library;
 
 export 'add_reward_entry.dart';
 export 'get_reward_history.dart';

@@ -57,7 +57,9 @@ class RewardLoading extends RewardState {
 /// State when rewards data is successfully loaded
 class RewardLoaded extends RewardState {
   final PaginatedResult<RewardEntry> entries;
+  @override
   final int totalPoints;
+  @override
   final List<RewardCategory> categories;
   final DateTime lastUpdated;
   final bool hasNextPage;

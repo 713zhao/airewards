@@ -101,7 +101,7 @@ class DataDeletionService {
 
   Future<void> _pagedDelete({
     required String collection,
-    required Query queryBuilder(Query collectionRef),
+    required Query Function(Query collectionRef) queryBuilder,
     int batchSize = 200,
   }) async {
     while (true) {

@@ -6,6 +6,7 @@
 /// - [RedemptionTransaction] - Transaction records
 /// - [RedemptionStatus] - Status enumeration
 /// - [RedemptionStats] - Redemption statistics and analytics
+library;
 
 export 'redemption_category.dart';
 export 'redemption_option.dart';

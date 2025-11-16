@@ -132,7 +132,7 @@ class TaskGenerationService {
         print('  ⚠️ Fallback: treating template ${tmpl.id} as recurring because it is marked original but lacks recurrencePattern');
       }
 
-  final id = '${tmpl.id}_$userId\_${dateKey}';
+  final id = '${tmpl.id}_${userId}_$dateKey';
       final ref = _firestore.collection('task_history').doc(id);
 
       if (!matchesDueDate && !matchesRecurrence) {

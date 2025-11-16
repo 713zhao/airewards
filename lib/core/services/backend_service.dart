@@ -584,10 +584,8 @@ class BackendService {
   static void _startPeriodicSync() {
     _periodicSyncTimer?.cancel();
     _periodicSyncTimer = Timer.periodic(const Duration(minutes: 15), (_) {
-      if (ApiClient.checkConnectivity() != null) {
-        performFullSync();
-      }
-    });
+      performFullSync();
+        });
   }
 
   /// Update sync status

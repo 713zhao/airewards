@@ -726,7 +726,7 @@ class _RewardsHistoryScreenState extends State<RewardsHistoryScreen>
           mainAxisSize: MainAxisSize.min,
           children: [
             DropdownButtonFormField<String>(
-              value: _sortBy,
+              initialValue: _sortBy,
               decoration: const InputDecoration(labelText: 'Sort by'),
               items: _sortOptions.map((option) {
                 return DropdownMenuItem(value: option, child: Text(option));

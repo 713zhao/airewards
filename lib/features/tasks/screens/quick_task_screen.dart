@@ -269,7 +269,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                         return Container(
                           padding: const EdgeInsets.all(24),
                           decoration: BoxDecoration(
-                            color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                            color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                             borderRadius: BorderRadius.circular(12),
                             border: Border.all(
                               color: theme.colorScheme.outline.withOpacity(0.2),
@@ -371,7 +371,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                         borderRadius: BorderRadius.circular(12),
                       ),
                       filled: true,
-                      fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                      fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                     ),
                     textCapitalization: TextCapitalization.sentences,
                   ),
@@ -384,7 +384,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                       // Category Selection
                       Expanded(
                         child: DropdownButtonFormField<String>(
-                          value: _selectedCategory,
+                          initialValue: _selectedCategory,
                           decoration: InputDecoration(
                             labelText: 'Category',
                             prefixIcon: const Icon(Icons.category),
@@ -392,7 +392,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             filled: true,
-                            fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                            fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                           ),
                           items: ['Chores', 'Homework', 'Exercise', 'Reading', 'Cleaning', 'Kitchen Help', 'Pet Care', 'Garden Work', 'Organization', 'General']
                               .map((category) => DropdownMenuItem(
@@ -413,7 +413,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                       // Points Selection
                       Expanded(
                         child: DropdownButtonFormField<int>(
-                          value: _selectedPoints,
+                          initialValue: _selectedPoints,
                           decoration: InputDecoration(
                             labelText: 'Points',
                             prefixIcon: const Icon(Icons.stars),
@@ -421,7 +421,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             filled: true,
-                            fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                            fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                           ),
                           items: [5, 10, 15, 20, 25]
                               .map((points) => DropdownMenuItem(

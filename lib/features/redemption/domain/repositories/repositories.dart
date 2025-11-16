@@ -6,5 +6,6 @@
 /// - [RedemptionStats] - Statistics about redemption activity
 /// - [RedemptionSyncResult] - Synchronization operation results
 /// - [InsufficientPointsFailure] - Specific failure type for insufficient points
+library;
 
 export 'redemption_repository.dart';

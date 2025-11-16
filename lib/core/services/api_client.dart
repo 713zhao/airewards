@@ -12,7 +12,7 @@ class ApiClient {
   static String? _authToken;
   static String? _refreshToken;
   static Timer? _tokenRefreshTimer;
-  static Map<String, String> _defaultHeaders = {
+  static final Map<String, String> _defaultHeaders = {
     'Content-Type': 'application/json',
     'Accept': 'application/json',
     'User-Agent': 'AIRewards-Flutter/1.0.0',

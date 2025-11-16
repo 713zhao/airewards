@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/semantics.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_test/flutter_test.dart';
 
@@ -149,11 +148,9 @@ void main() {
                 primary: Colors.black,
                 secondary: Colors.white,
                 surface: Colors.white,
-                background: Colors.white,
                 onPrimary: Colors.white,
                 onSecondary: Colors.black,
                 onSurface: Colors.black,
-                onBackground: Colors.black,
               ),
             ),
             home: Scaffold(
@@ -193,7 +190,7 @@ void main() {
           MaterialApp(
             home: MediaQuery(
               data: const MediaQueryData(
-                textScaleFactor: 2.0, // Double font size
+                textScaler: TextScaler.linear(2.0), // Double font size
               ),
               child: Scaffold(
                 appBar: AppBar(
@@ -249,7 +246,7 @@ void main() {
           MaterialApp(
             home: MediaQuery(
               data: const MediaQueryData(
-                textScaleFactor: 1.5, // 1.5x font size
+                textScaler: TextScaler.linear(1.5), // 1.5x font size
               ),
               child: Scaffold(
                 body: Center(
@@ -448,7 +445,7 @@ void main() {
                 mainAxisSpacing: 16,
                 children: [
                   // Task completion buttons
-                  Container(
+                  SizedBox(
                     height: 120,
                     child: ElevatedButton(
                       onPressed: () {},
@@ -462,7 +459,7 @@ void main() {
                       ),
                     ),
                   ),
-                  Container(
+                  SizedBox(
                     height: 120,
                     child: ElevatedButton(
                       onPressed: () {},

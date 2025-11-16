@@ -680,7 +680,7 @@ class FamilyService extends ChangeNotifier {
       }
 
       // 3) Delete family-scoped collections using paging
-      Future<void> _pagedDelete(String collection, {int batchSize = 300}) async {
+      Future<void> pagedDelete(String collection, {int batchSize = 300}) async {
         debugPrint('Deleting from collection: $collection (familyId: $familyId)');
         int totalDeleted = 0;
         while (true) {
@@ -705,10 +705,10 @@ class FamilyService extends ChangeNotifier {
       }
 
       debugPrint('Starting deletion of family-scoped collections...');
-      await _pagedDelete('tasks');
-      await _pagedDelete('task_history');
-      await _pagedDelete('redemptions');
-      await _pagedDelete('rewards');
+      await pagedDelete('tasks');
+      await pagedDelete('task_history');
+      await pagedDelete('redemptions');
+      await pagedDelete('rewards');
 
       // 4) Delete all child user documents in the family
       debugPrint('Deleting ${childIds.length} child user documents');

@@ -166,7 +166,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget>
       margin: widget.margin,
       padding: widget.padding,
       decoration: BoxDecoration(
-        color: widget.backgroundColor ?? theme.colorScheme.surfaceVariant.withOpacity(0.5),
+        color: widget.backgroundColor ?? theme.colorScheme.surfaceContainerHighest.withOpacity(0.5),
         borderRadius: BorderRadius.circular(4),
       ),
       child: AnimatedSwitcher(
@@ -189,7 +189,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget>
   }
 
   Widget _buildLoadingWidget(ThemeData theme) {
-    return Container(
+    return SizedBox(
       key: const ValueKey('loading'),
       height: widget.adSize.height.toDouble(),
       child: Row(
@@ -222,7 +222,7 @@ class _AdBannerWidgetState extends State<AdBannerWidget>
       return widget.errorWidget!;
     }
     
-    return Container(
+    return SizedBox(
       key: const ValueKey('error'),
       height: widget.adSize.height.toDouble(),
       child: Row(

@@ -153,6 +153,7 @@ class UserModel extends User {
   }
 
   /// Creates a copy of this model with updated fields
+  @override
   UserModel copyWith({
     String? id,
     String? email,
@@ -180,6 +181,7 @@ class UserModel extends User {
   }
 
   /// Creates a new UserModel with updated last login time
+  @override
   UserModel updateLastLogin() {
     return copyWith(
       lastLoginAt: DateTime.now(),

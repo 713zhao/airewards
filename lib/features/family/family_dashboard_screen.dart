@@ -415,7 +415,7 @@ class _FamilyDashboardScreenState extends State<FamilyDashboardScreen> {
                         ),
                       ),
                       Text(
-                        '${totalPoints} points earned',
+                        '$totalPoints points earned',
                         style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                           color: Colors.green.shade600,
                           fontWeight: FontWeight.w500,

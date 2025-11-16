@@ -165,7 +165,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                  fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 ),
                 textCapitalization: TextCapitalization.sentences,
                 validator: (value) {
@@ -192,7 +192,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                  fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 ),
                 maxLines: 3,
                 textCapitalization: TextCapitalization.sentences,
@@ -213,7 +213,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   Expanded(
                     flex: 2,
                     child: DropdownButtonFormField<String>(
-                      value: _selectedCategory,
+                      initialValue: _selectedCategory,
                       decoration: InputDecoration(
                         labelText: 'Category',
                         prefixIcon: const Icon(Icons.category),
@@ -221,7 +221,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         filled: true,
-                        fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                        fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                       ),
                       items: TaskService.getTaskCategories()
                           .map((category) => DropdownMenuItem(
@@ -250,7 +250,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                           borderRadius: BorderRadius.circular(12),
                         ),
                         filled: true,
-                        fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                        fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                       ),
                       keyboardType: TextInputType.number,
                       inputFormatters: [
@@ -275,7 +275,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
 
               // Priority Dropdown
               DropdownButtonFormField<TaskPriority>(
-                value: _selectedPriority,
+                initialValue: _selectedPriority,
                 decoration: InputDecoration(
                   labelText: 'Priority',
                   prefixIcon: const Icon(Icons.flag),
@@ -283,7 +283,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                  fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 ),
                 items: TaskPriority.values
                     .map((priority) => DropdownMenuItem(
@@ -321,7 +321,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                   decoration: BoxDecoration(
                     border: Border.all(color: theme.colorScheme.outline),
                     borderRadius: BorderRadius.circular(12),
-                    color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                    color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                   ),
                   child: Row(
                     children: [
@@ -366,7 +366,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                   filled: true,
-                  fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                  fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 ),
                 maxLines: 2,
                 textCapitalization: TextCapitalization.sentences,
@@ -418,7 +418,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                         
                         // Recurrence Type
                         DropdownButtonFormField<RecurrenceType>(
-                          value: _recurrenceType,
+                          initialValue: _recurrenceType,
                           decoration: InputDecoration(
                             labelText: 'Repeat Frequency',
                             prefixIcon: const Icon(Icons.schedule),
@@ -426,7 +426,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                               borderRadius: BorderRadius.circular(12),
                             ),
                             filled: true,
-                            fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                            fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                           ),
                           items: [
                             DropdownMenuItem(
@@ -482,7 +482,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                   ),
                                   filled: true,
-                                  fillColor: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                                  fillColor: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                                 ),
                                 keyboardType: TextInputType.number,
                                 onChanged: (value) {
@@ -521,7 +521,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                             decoration: BoxDecoration(
                               border: Border.all(color: theme.colorScheme.outline),
                               borderRadius: BorderRadius.circular(12),
-                              color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                              color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                             ),
                             child: Row(
                               children: [
@@ -565,7 +565,7 @@ class _AddTaskScreenState extends State<AddTaskScreen> {
                 decoration: BoxDecoration(
                   border: Border.all(color: theme.colorScheme.outline),
                   borderRadius: BorderRadius.circular(12),
-                  color: theme.colorScheme.surfaceVariant.withOpacity(0.3),
+                  color: theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
                 ),
                 padding: const EdgeInsets.all(16),
                 child: Row(

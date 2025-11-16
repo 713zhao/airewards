@@ -48,8 +48,8 @@ void main() {
       test('should trim whitespace from name and description', () {
         final result = RewardCategory.create(
           id: validId,
-          name: '  ${validName}  ',
-          description: '  ${validDescription}  ',
+          name: '  $validName  ',
+          description: '  $validDescription  ',
           color: validColor,
           iconData: validIconData,
         );

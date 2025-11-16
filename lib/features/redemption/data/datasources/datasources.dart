@@ -5,5 +5,6 @@
 /// - [RedemptionLocalDataSource] - Local storage data source interface
 /// - [RedemptionRemoteDataSourceImpl] - Remote data source implementation
 /// - [RedemptionLocalDataSourceImpl] - Local data source implementation
+library;
 
 export 'redemption_data_sources.dart';

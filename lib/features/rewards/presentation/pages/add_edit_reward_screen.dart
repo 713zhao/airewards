@@ -309,7 +309,7 @@ class _AddEditRewardScreenState extends State<AddEditRewardScreen> {
             Expanded(
               flex: 3,
               child: DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 decoration: const InputDecoration(
                   labelText: 'Category',
                   border: OutlineInputBorder(),
@@ -355,7 +355,7 @@ class _AddEditRewardScreenState extends State<AddEditRewardScreen> {
       children: [
         const Text('Icon'),
         const SizedBox(height: 8),
-        Container(
+        SizedBox(
           height: 60,
           child: ListView.builder(
             scrollDirection: Axis.horizontal,

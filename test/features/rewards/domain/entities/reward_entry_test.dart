@@ -62,7 +62,7 @@ void main() {
       });
 
       test('should trim whitespace from description', () {
-        const descriptionWithWhitespace = '  ${validDescription}  ';
+        const descriptionWithWhitespace = '  $validDescription  ';
         
         final result = RewardEntry.create(
           id: validId,

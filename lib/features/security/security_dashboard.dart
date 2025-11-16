@@ -3,7 +3,6 @@ import 'dart:math' as math;
 
 import '../../core/security/audit_logging_service.dart';
 import '../../core/security/authentication_security_service.dart';
-import '../../core/security/encryption_service.dart';
 
 /// Comprehensive security monitoring dashboard
 class SecurityDashboard extends StatefulWidget {

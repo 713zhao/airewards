@@ -9,6 +9,7 @@
 /// - [DatabaseMigration] - Base class for individual migrations
 /// - [MigrationManager] - Utilities for migration management
 /// - [DatabaseException] - Custom exception for database operations
+library;
 
 export 'database_helper.dart';
 export 'database_migrations.dart';

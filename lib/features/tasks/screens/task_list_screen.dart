@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import '../../../core/services/task_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/models/task_model.dart';
-import '../../../core/models/account_type.dart';
 
 class TaskListScreen extends StatefulWidget {
   const TaskListScreen({super.key});
@@ -16,7 +14,7 @@ class _TaskListScreenState extends State<TaskListScreen> with SingleTickerProvid
   late TabController _tabController;
   final TaskService _taskService = TaskService();
   bool _isChildLinkedToParent = false;
-  bool _isSyncing = false;
+  final bool _isSyncing = false;
   
   // Single stream subscription to prevent multiple rebuilds
   late final Stream<List<TaskModel>> _tasksStream;
@@ -242,7 +240,7 @@ class _TaskListScreenState extends State<TaskListScreen> with SingleTickerProvid
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                   decoration: BoxDecoration(
-                    color: theme.colorScheme.surfaceVariant,
+                    color: theme.colorScheme.surfaceContainerHighest,
                     borderRadius: BorderRadius.circular(8),
                   ),
                   child: Text(

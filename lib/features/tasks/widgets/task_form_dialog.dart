@@ -143,7 +143,7 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                     // Category Dropdown
                     Expanded(
                       child: DropdownButtonFormField<String>(
-                        value: _selectedCategory,
+                        initialValue: _selectedCategory,
                         decoration: const InputDecoration(
                           labelText: 'Category',
                           border: OutlineInputBorder(),
@@ -169,7 +169,7 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                     // Priority Dropdown
                     Expanded(
                       child: DropdownButtonFormField<TaskPriority>(
-                        value: _selectedPriority,
+                        initialValue: _selectedPriority,
                         decoration: const InputDecoration(
                           labelText: 'Priority',
                           border: OutlineInputBorder(),
@@ -238,7 +238,7 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                     // Recurrence Dropdown
                     Expanded(
                       child: DropdownButtonFormField<RecurrenceType?>(
-                        value: _selectedRecurrence,
+                        initialValue: _selectedRecurrence,
                         decoration: const InputDecoration(
                           labelText: 'Repeat',
                           border: OutlineInputBorder(),
@@ -254,7 +254,7 @@ class _TaskFormDialogState extends State<TaskFormDialog> {
                               value: pattern,
                               child: Text(_getRecurrenceText(pattern)),
                             );
-                          }).toList(),
+                          }),
                         ],
                         onChanged: (value) {
                           setState(() {

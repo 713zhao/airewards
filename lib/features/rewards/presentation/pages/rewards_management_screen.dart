@@ -1,9 +1,7 @@
 import 'package:flutter/material.dart';
 import 'add_edit_reward_screen.dart';
 import '../../../../core/services/reward_service.dart';
-import '../../../../core/services/auth_service.dart';
 import '../../../../core/models/reward_item.dart';
-import '../../../../core/models/account_type.dart';
 
 /// Screen for managing rewards (add/edit/delete)
 class RewardsManagementScreen extends StatefulWidget {

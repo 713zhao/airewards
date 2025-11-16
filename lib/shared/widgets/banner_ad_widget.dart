@@ -65,7 +65,7 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       return Container(
         width: double.infinity,
         height: 90,
-        color: Theme.of(context).colorScheme.surfaceVariant.withOpacity(0.3),
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
         child: Center(
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,

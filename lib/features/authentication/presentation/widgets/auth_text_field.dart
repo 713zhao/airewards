@@ -147,10 +147,10 @@ class _AuthTextFieldState extends State<AuthTextField>
             suffixIcon: widget.suffixIcon,
             
             // Label styling
-            labelStyle: MaterialStateTextStyle.resolveWith((states) {
-              if (states.contains(MaterialState.focused)) {
+            labelStyle: WidgetStateTextStyle.resolveWith((states) {
+              if (states.contains(WidgetState.focused)) {
                 return TextStyle(color: theme.colorScheme.primary);
-              } else if (states.contains(MaterialState.error)) {
+              } else if (states.contains(WidgetState.error)) {
                 return TextStyle(color: theme.colorScheme.error);
               }
               return TextStyle(color: theme.colorScheme.onSurfaceVariant);

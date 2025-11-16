@@ -368,7 +368,7 @@ class _QualityAssuranceDashboardState extends State<QualityAssuranceDashboard>
                   ],
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -638,7 +638,7 @@ class _QualityAssuranceDashboardState extends State<QualityAssuranceDashboard>
                 subtitle: Text('$passed/$total tests passed'),
                 trailing: Text('${((passed / total) * 100).toStringAsFixed(0)}%'),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),
@@ -1018,7 +1018,7 @@ class _QualityAssuranceDashboardState extends State<QualityAssuranceDashboard>
                                   Colors.blue).withOpacity(0.2),
                 ),
               );
-            }).toList(),
+            }),
           ],
         ),
       ),

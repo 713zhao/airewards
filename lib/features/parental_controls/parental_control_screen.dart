@@ -322,7 +322,7 @@ class _ParentalControlScreenState extends State<ParentalControlScreen>
       subtitle: Text(subtitle),
       value: value,
       onChanged: onChanged,
-      activeColor: Colors.blue[700],
+      activeThumbColor: Colors.blue[700],
     );
   }
 

@@ -58,8 +58,10 @@ class AnalyticsLoading extends AnalyticsState {
 
 /// State when analytics data is successfully loaded
 class AnalyticsLoaded extends AnalyticsState {
+  @override
   final AnalyticsData data;
   final AnalyticsTimeRange timeRange;
+  @override
   final bool isRealTimeEnabled;
   final List<Goal> selectedGoals;
   final AnalyticsFilter? selectedFilter;

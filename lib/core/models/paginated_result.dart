@@ -41,7 +41,7 @@ class PaginatedResult<T> extends Equatable {
         totalPages = 1;
 
   /// Creates a paginated result from a simple list (for single-page results)
-  PaginatedResult.fromList(List<T> items)
+  const PaginatedResult.fromList(List<T> items)
       : items = items,
         totalCount = items.length,
         currentPage = 1,

@@ -163,7 +163,7 @@ class _PerformanceDashboardState extends State<PerformanceDashboard>
                   child: CircularProgressIndicator(
                     value: frameRate / 60,
                     strokeWidth: 8,
-                    backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+                    backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
                     valueColor: AlwaysStoppedAnimation<Color>(
                       isGood ? Colors.green : Colors.orange,
                     ),
@@ -209,7 +209,7 @@ class _PerformanceDashboardState extends State<PerformanceDashboard>
             
             LinearProgressIndicator(
               value: percentage,
-              backgroundColor: Theme.of(context).colorScheme.surfaceVariant,
+              backgroundColor: Theme.of(context).colorScheme.surfaceContainerHighest,
               valueColor: AlwaysStoppedAnimation<Color>(
                 isGood ? Colors.green : Colors.red,
               ),

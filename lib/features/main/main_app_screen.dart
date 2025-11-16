@@ -359,8 +359,8 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   FloatingActionButton(
                     onPressed: _addNewTask,
                     heroTag: "add_task",
-                    child: const Icon(Icons.add_task),
                     tooltip: 'Add Task',
+                    child: const Icon(Icons.add_task),
                   ),
                   const SizedBox(height: 8),
                 ],
@@ -368,8 +368,8 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   onPressed: _quickEarnPoints,
                   heroTag: "quick_task",
                   backgroundColor: Theme.of(context).colorScheme.secondary,
-                  child: const Icon(Icons.flash_on),
                   tooltip: 'Quick Task',
+                  child: const Icon(Icons.flash_on),
                 ),
               ],
             )
@@ -539,13 +539,13 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   redemptionPointsSpentToday += task.pointValue.abs();
                 }
 
-                final pointsSubtitle = 'points earned today';
+                final pointsSubtitle = 'today';
                 final redemptionDetail = redemptionPointsSpentToday > 0
                     ? ' (-$redemptionPointsSpentToday ${redemptionPointsSpentToday == 1 ? 'point' : 'points'})'
                     : '';
                 final rewardsSubtitle = redemptionsToday > 0
                     ? '$redemptionsToday ${redemptionsToday == 1 ? 'reward' : 'rewards'} redeemed$redemptionDetail'
-                    : 'No rewards redeemed yet';
+                    : 'No redeemed';
 
                 return Row(
                   children: [
@@ -753,7 +753,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
 
     final backgroundColor = isCurrentUser
         ? theme.colorScheme.primaryContainer.withOpacity(0.35)
-        : theme.colorScheme.surfaceVariant.withOpacity(0.4);
+        : theme.colorScheme.surfaceContainerHighest.withOpacity(0.4);
     final borderColor = isCurrentUser
         ? theme.colorScheme.primary
         : theme.colorScheme.outlineVariant;
@@ -1769,7 +1769,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                     style: IconButton.styleFrom(
                       backgroundColor: Theme.of(
                         context,
-                      ).colorScheme.surfaceVariant.withOpacity(0.5),
+                      ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
                     ),
                   ),
                   IconButton(
@@ -1792,7 +1792,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                     style: IconButton.styleFrom(
                       backgroundColor: Theme.of(
                         context,
-                      ).colorScheme.surfaceVariant.withOpacity(0.5),
+                      ).colorScheme.surfaceContainerHighest.withOpacity(0.5),
                     ),
                   ),
                   const SizedBox(width: 4),
@@ -2170,7 +2170,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
               const SizedBox(height: 12),
               ...regularTasks
                   .map((task) => _buildTaskItemFromModel(task))
-                  .toList(),
+                  ,
               const SizedBox(height: 8),
               Card(
                 color: Theme.of(
@@ -2212,7 +2212,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
               const SizedBox(height: 12),
               ...selectedRedemptions
                   .map((redemption) => _buildRedemptionHistoryCard(redemption))
-                  .toList(),
+                  ,
               const SizedBox(height: 8),
               Card(
                 color: Theme.of(
@@ -2851,6 +2851,12 @@ class _MainAppScreenState extends State<MainAppScreen> {
   }
 
   Widget _buildProfileStats() {
+    // Calculate achievements based on real user activity
+    final hasFirstTask = _totalTasksDone >= 1;
+    final hasWeekStreak = _totalTasksDone >= 7; // Simplified: 7 completed tasks
+    final hasPointCollector = _currentPoints >= 1000;
+    final hasTaskMaster = _totalTasksDone >= 50;
+    
     return Card(
       child: Padding(
         padding: const EdgeInsets.all(16),
@@ -2862,15 +2868,23 @@ class _MainAppScreenState extends State<MainAppScreen> {
             _buildAchievementItem(
               'First Task',
               'Complete your first task',
-              true,
+              hasFirstTask,
             ),
             _buildAchievementItem(
               'Week Streak',
-              'Complete tasks for 7 days',
-              true,
+              'Complete 7 tasks',
+              hasWeekStreak,
             ),
-            _buildAchievementItem('Point Collector', 'Earn 1000 points', true),
-            _buildAchievementItem('Task Master', 'Complete 50 tasks', false),
+            _buildAchievementItem(
+              'Point Collector',
+              'Earn 1000 points',
+              hasPointCollector,
+            ),
+            _buildAchievementItem(
+              'Task Master',
+              'Complete 50 tasks',
+              hasTaskMaster,
+            ),
           ],
         ),
       ),
@@ -4291,7 +4305,7 @@ class _TaskHistoryScreenState extends State<TaskHistoryScreen> {
                 const SizedBox(height: 24),
                 ...historyData
                     .map((dayData) => _buildDaySection(dayData, theme))
-                    .toList(),
+                    ,
               ],
             ),
           );
@@ -4542,7 +4556,7 @@ class _TaskHistoryScreenState extends State<TaskHistoryScreen> {
               const SizedBox(height: 12),
               ...dayData.tasks
                   .map((task) => _buildHistoryTaskItem(task, theme))
-                  .toList(),
+                  ,
             ],
           ],
         ),
@@ -4560,7 +4574,7 @@ class _TaskHistoryScreenState extends State<TaskHistoryScreen> {
       decoration: BoxDecoration(
         color: isRedemption
             ? Colors.red.withOpacity(0.05)
-            : theme.colorScheme.surfaceVariant.withOpacity(0.3),
+            : theme.colorScheme.surfaceContainerHighest.withOpacity(0.3),
         borderRadius: BorderRadius.circular(8),
         border: Border(
           left: BorderSide(
@@ -4705,7 +4719,7 @@ class _TaskHistoryScreenState extends State<TaskHistoryScreen> {
     final period = hour >= 12 ? 'PM' : 'AM';
     final displayHour = hour == 0 ? 12 : (hour > 12 ? hour - 12 : hour);
 
-    return '${displayHour}:${minute.toString().padLeft(2, '0')} $period';
+    return '$displayHour:${minute.toString().padLeft(2, '0')} $period';
   }
 }
 

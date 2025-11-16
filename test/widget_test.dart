@@ -5,7 +5,7 @@
 
 import 'package:flutter/material.dart';
 import 'package:flutter_test/flutter_test.dart';
-import '../lib/core/theme/app_theme.dart';
+import 'package:ai_rewards_system/core/theme/app_theme.dart';
 
 void main() {
   testWidgets('App renders without errors', (WidgetTester tester) async {

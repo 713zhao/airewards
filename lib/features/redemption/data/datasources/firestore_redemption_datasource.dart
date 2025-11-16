@@ -328,7 +328,7 @@ class FirestoreRedemptionDataSourceImpl implements FirestoreRedemptionDataSource
           'lastRedeemed': FieldValue.serverTimestamp(),
         });
         
-        log('Processed redemption transaction: ${transactionWithId.id} (${totalCost} points)', 
+        log('Processed redemption transaction: ${transactionWithId.id} ($totalCost points)', 
             name: 'FirestoreRedemptionDataSource');
         
         return transactionWithId;

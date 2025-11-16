@@ -450,7 +450,7 @@ class _AnalyticsDashboardScreenState extends State<AnalyticsDashboardScreen>
             child: Column(
               children: [
                 // Pie chart representation (simplified)
-                Container(
+                SizedBox(
                   height: 120,
                   child: Row(
                     children: _categoryBreakdown.map((category) {
