@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_secure_storage/flutter_secure_storage.dart';
 // import 'package:firebase_auth/firebase_auth.dart';
@@ -38,12 +39,18 @@ class _LoginScreenState extends State<LoginScreen> {
   String _normalizedKeyForEmail(String email) => 'pwd_${_normalizeEmail(email)}';
   String _legacyKeyForEmail(String email) => 'pwd_${email.trim()}';
   
+  // Web fallback keys (SharedPreferences/localStorage) for Safari limitations
+  String _webFallbackKeyForEmail(String email) => 'pwd_web_${_normalizeEmail(email)}';
+  
 
   @override
   void initState() {
     super.initState();
-    _loadSavedAccounts();
     _emailController.addListener(_onEmailChanged);
+    // Load saved accounts after first frame to ensure SharedPreferences is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      _loadSavedAccounts();
+    });
   }
 
   @override
@@ -65,15 +72,25 @@ class _LoginScreenState extends State<LoginScreen> {
       
       final accounts = <Map<String, String>>[];
       for (final email in savedEmails) {
-        // Read password from secure storage (try normalized first, then legacy key for compatibility)
-        String password = await secureStorage.read(key: _normalizedKeyForEmail(email)) ?? '';
-        if (password.isEmpty) {
-          final legacy = await secureStorage.read(key: _legacyKeyForEmail(email)) ?? '';
-          if (legacy.isNotEmpty) {
-            // Migrate legacy key to normalized key for future reads
-            await secureStorage.write(key: _normalizedKeyForEmail(email), value: legacy);
-            await secureStorage.delete(key: _legacyKeyForEmail(email));
-            password = legacy;
+        // On web: use SharedPreferences directly for reliability on Safari
+        // On mobile: use secure storage
+        String password = '';
+        if (kIsWeb) {
+          password = prefs.getString(_webFallbackKeyForEmail(email)) ?? '';
+        } else {
+          try {
+            password = await secureStorage.read(key: _normalizedKeyForEmail(email)) ?? '';
+            if (password.isEmpty) {
+              final legacy = await secureStorage.read(key: _legacyKeyForEmail(email)) ?? '';
+              if (legacy.isNotEmpty) {
+                // Migrate legacy key to normalized key for future reads
+                await secureStorage.write(key: _normalizedKeyForEmail(email), value: legacy);
+                await secureStorage.delete(key: _legacyKeyForEmail(email));
+                password = legacy;
+              }
+            }
+          } catch (_) {
+            // ignore
           }
         }
         accounts.add({
@@ -125,13 +142,29 @@ class _LoginScreenState extends State<LoginScreen> {
       // Save email list to SharedPreferences
       await prefs.setStringList('saved_emails', savedEmails);
       
-      // Save password to secure storage (encrypted)
+      // Save password (web: SharedPreferences; mobile: secure storage)
       if (password.isNotEmpty) {
-        await secureStorage.write(key: _normalizedKeyForEmail(email), value: password);
+        if (kIsWeb) {
+          await prefs.setString(_webFallbackKeyForEmail(email), password);
+        } else {
+          try {
+            await secureStorage.write(key: _normalizedKeyForEmail(email), value: password);
+          } catch (_) {
+            // ignore
+          }
+        }
       } else {
         // Remove password if empty (parent account or OAuth)
-        await secureStorage.delete(key: _normalizedKeyForEmail(email));
-        await secureStorage.delete(key: _legacyKeyForEmail(email));
+        if (kIsWeb) {
+          await prefs.remove(_webFallbackKeyForEmail(email));
+        } else {
+          try {
+            await secureStorage.delete(key: _normalizedKeyForEmail(email));
+            await secureStorage.delete(key: _legacyKeyForEmail(email));
+          } catch (_) {
+            // ignore
+          }
+        }
       }
       
       // Update in-memory list immediately
@@ -165,11 +198,13 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     
+    final filtered = _savedAccounts.where((account) {
+      return account['email']!.toLowerCase().contains(query);
+    }).toList();
+    
     setState(() {
-      _filteredAccounts = _savedAccounts.where((account) {
-        return account['email']!.toLowerCase().contains(query);
-      }).toList();
-      _showAccountSuggestions = _filteredAccounts.isNotEmpty && !_isSignUp;
+      _filteredAccounts = filtered;
+      _showAccountSuggestions = filtered.isNotEmpty && !_isSignUp;
     });
 
     // If typed email exactly matches a saved account (case-insensitive), auto-fill password
@@ -178,9 +213,18 @@ class _LoginScreenState extends State<LoginScreen> {
       final account = exact.first;
       var pwd = account['password'] ?? '';
       if (pwd.isEmpty) {
-        // Fallback: fetch from secure storage using normalized key
-        const secureStorage = FlutterSecureStorage();
-        pwd = await secureStorage.read(key: _normalizedKeyForEmail(raw)) ?? '';
+        // Fallback: fetch from storage
+        if (kIsWeb) {
+          final prefs = await SharedPreferences.getInstance();
+          pwd = prefs.getString(_webFallbackKeyForEmail(raw)) ?? '';
+        } else {
+          const secureStorage = FlutterSecureStorage();
+          try {
+            pwd = await secureStorage.read(key: _normalizedKeyForEmail(raw)) ?? '';
+          } catch (_) {
+            // ignore
+          }
+        }
       }
       if (pwd.isNotEmpty && mounted) {
         setState(() {
@@ -195,12 +239,20 @@ class _LoginScreenState extends State<LoginScreen> {
     var email = account['email'] ?? '';
     var password = account['password'] ?? '';
     if (password.isEmpty && email.isNotEmpty) {
-      // Fallback to secure storage if in-memory password is empty
-      const secureStorage = FlutterSecureStorage();
-      final fetched = await secureStorage.read(key: _normalizedKeyForEmail(email)) ?? '';
-      if (fetched.isNotEmpty) {
-        password = fetched;
+      // Fallback to storage if in-memory password is empty
+      String fetched = '';
+      if (kIsWeb) {
+        final prefs = await SharedPreferences.getInstance();
+        fetched = prefs.getString(_webFallbackKeyForEmail(email)) ?? '';
+      } else {
+        const secureStorage = FlutterSecureStorage();
+        try {
+          fetched = await secureStorage.read(key: _normalizedKeyForEmail(email)) ?? '';
+        } catch (_) {
+          // ignore
+        }
       }
+      if (fetched.isNotEmpty) password = fetched;
     }
     if (mounted) {
       setState(() {
@@ -371,19 +423,40 @@ class _LoginScreenState extends State<LoginScreen> {
                   TextFormField(
                     controller: _emailController,
                     keyboardType: TextInputType.emailAddress,
+                    autofocus: false,
                     decoration: InputDecoration(
                       labelText: 'Email',
                       hintText: 'Enter your email address',
                       prefixIcon: const Icon(Icons.email),
                       suffixIcon: _savedAccounts.isNotEmpty
-                          ? IconButton(
-                              icon: const Icon(Icons.arrow_drop_down),
-                              onPressed: () {
-                                setState(() {
-                                  _filteredAccounts = _savedAccounts;
-                                  _showAccountSuggestions = !_showAccountSuggestions && !_isSignUp;
-                                });
-                              },
+                          ? Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Container(
+                                  padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 2),
+                                  decoration: BoxDecoration(
+                                    color: Theme.of(context).colorScheme.primary,
+                                    borderRadius: BorderRadius.circular(12),
+                                  ),
+                                  child: Text(
+                                    '${_savedAccounts.length}',
+                                    style: TextStyle(
+                                      color: Theme.of(context).colorScheme.onPrimary,
+                                      fontSize: 12,
+                                      fontWeight: FontWeight.bold,
+                                    ),
+                                  ),
+                                ),
+                                IconButton(
+                                  icon: const Icon(Icons.arrow_drop_down),
+                                  onPressed: () {
+                                    setState(() {
+                                      _filteredAccounts = _savedAccounts;
+                                      _showAccountSuggestions = !_showAccountSuggestions && !_isSignUp;
+                                    });
+                                  },
+                                ),
+                              ],
                             )
                           : null,
                     ),
