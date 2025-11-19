@@ -124,12 +124,17 @@ class _AddEditRewardScreenState extends State<AddEditRewardScreen> {
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
+    final canManage = RewardService().canManageRewards();
     
     return Scaffold(
       appBar: AppBar(
-        title: Text(_isEditing ? 'Edit Reward' : 'Add New Reward'),
+        title: Text(
+          _isEditing
+              ? (canManage ? 'Edit Reward' : 'View Reward')
+              : (canManage ? 'Add New Reward' : 'Suggest a Reward'),
+        ),
         actions: [
-          if (_isEditing)
+          if (_isEditing && canManage)
             IconButton(
               icon: const Icon(Icons.delete),
               onPressed: _showDeleteConfirmation,
@@ -437,13 +442,18 @@ class _AddEditRewardScreenState extends State<AddEditRewardScreen> {
   }
 
   Widget _buildActionButtons() {
+    final canManage = RewardService().canManageRewards();
     return Column(
       children: [
         SizedBox(
           width: double.infinity,
           child: ElevatedButton(
             onPressed: _saveReward,
-            child: Text(_isEditing ? 'Update Reward' : 'Create Reward'),
+            child: Text(
+              _isEditing
+                  ? (canManage ? 'Update Reward' : 'Save')
+                  : (canManage ? 'Create Reward' : 'Submit Suggestion'),
+            ),
           ),
         ),
         const SizedBox(height: 12),
@@ -498,6 +508,7 @@ class _AddEditRewardScreenState extends State<AddEditRewardScreen> {
 
     try {
       final rewardService = RewardService();
+      final canManage = rewardService.canManageRewards();
       
       if (_isEditing && widget.rewardId != null) {
         // Update existing reward
@@ -515,6 +526,9 @@ class _AddEditRewardScreenState extends State<AddEditRewardScreen> {
               : DateTime.now(),
         );
         
+        if (!canManage) {
+          throw Exception('You do not have permission to update this reward');
+        }
         await rewardService.updateReward(updatedReward);
       } else {
         // Create new reward
@@ -526,11 +540,14 @@ class _AddEditRewardScreenState extends State<AddEditRewardScreen> {
           category: _selectedCategory!,
           iconCodePoint: _selectedIcon!.codePoint,
           colorValue: _selectedColor!.value,
-          isActive: true,
+          isActive: canManage, // parents create active, children suggest inactive
           createdAt: DateTime.now(),
         );
-        
-        await rewardService.addReward(newReward);
+        if (canManage) {
+          await rewardService.addReward(newReward);
+        } else {
+          await rewardService.proposeReward(newReward);
+        }
       }
 
       if (mounted) {
@@ -540,7 +557,7 @@ class _AddEditRewardScreenState extends State<AddEditRewardScreen> {
             content: Text(
               _isEditing
                   ? 'Reward updated successfully!'
-                  : 'Reward created successfully!',
+                  : (canManage ? 'Reward created successfully!' : 'Suggestion submitted for approval!'),
             ),
             backgroundColor: Colors.green,
           ),

@@ -12,12 +12,9 @@ class RewardService {
   factory RewardService() => _instance;
   RewardService._internal();
 
-  // Suppress all print statements in this class
-  void print(Object? object) {}
-
   static const String _rewardsKey = 'rewards_data';
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
-  
+
   List<RewardItem> _rewards = [];
   final ValueNotifier<List<RewardItem>> _rewardsNotifier = ValueNotifier<List<RewardItem>>([]);
 
@@ -28,14 +25,75 @@ class RewardService {
   bool canManageRewards() {
     final currentUser = AuthService.currentUser;
     if (currentUser == null) return false;
-    
     try {
       final familyService = getIt<FamilyService>();
       return familyService.canManageRewards(currentUser);
     } catch (e) {
-      // Fallback to checking account type directly
       return currentUser.hasManagementPermissions;
     }
+  }
+
+  /// Child proposes a new reward (status: pending)
+  Future<void> proposeReward(RewardItem item) async {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) throw Exception('Not authenticated');
+    final pendingReward = item.copyWith(
+      status: 'pending',
+      createdBy: currentUser.id,
+      approvedBy: null,
+      approvedAt: null,
+      familyId: currentUser.familyId,
+      createdAt: DateTime.now(),
+      updatedAt: DateTime.now(),
+    );
+    await _firestore.collection('rewards').add(pendingReward.toJson());
+    await reloadRewards();
+  }
+
+  /// Parent lists all pending rewards for approval
+  List<RewardItem> getPendingRewards() {
+    return _rewards.where((r) => r.status == 'pending').toList();
+  }
+
+  /// Parent approves a pending reward
+  Future<void> approveReward(String rewardId) async {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) throw Exception('Not authenticated');
+    final doc = await _firestore.collection('rewards').doc(rewardId).get();
+    if (!doc.exists) throw Exception('Reward not found');
+    final data = doc.data()!;
+    final updated = Map<String, dynamic>.from(data)
+      ..['status'] = 'approved'
+      ..['approvedBy'] = currentUser.id
+      ..['approvedAt'] = DateTime.now().toIso8601String()
+      ..['updatedAt'] = DateTime.now().toIso8601String();
+    await _firestore.collection('rewards').doc(rewardId).update(updated);
+    await reloadRewards();
+  }
+
+  /// Parent rejects a pending reward
+  Future<void> rejectReward(String rewardId) async {
+    final currentUser = AuthService.currentUser;
+    if (currentUser == null) throw Exception('Not authenticated');
+    if (!canManageRewards()) throw Exception('Insufficient permissions');
+    await _firestore.collection('rewards').doc(rewardId).delete();
+    await reloadRewards();
+  }
+
+  /// Parent edits a pending reward
+  Future<void> editPendingReward(String rewardId, RewardItem updatedItem) async {
+    await _firestore.collection('rewards').doc(rewardId).update(updatedItem.toJson());
+    await reloadRewards();
+  }
+
+  /// List rewards visible to children (approved only, active, enough points)
+  List<RewardItem> getVisibleRewards(int childPoints) {
+    return _rewards.where((r) => r.status == 'approved' && r.isActive && childPoints >= r.points).toList();
+  }
+
+  /// List all approved rewards (for browsing/redeem)
+  List<RewardItem> getApprovedRewards() {
+    return _rewards.where((r) => r.status == 'approved').toList();
   }
 
   Future<void> initialize() async {
@@ -332,12 +390,18 @@ class RewardService {
     if (!canManageRewards()) {
       throw Exception('Insufficient permissions to add rewards');
     }
-    
+
+    final currentUser = AuthService.currentUser;
     final newReward = reward.copyWith(
       id: DateTime.now().millisecondsSinceEpoch.toString(),
       createdAt: DateTime.now(),
+      status: 'approved',
+      approvedBy: currentUser?.id,
+      approvedAt: DateTime.now(),
+      isActive: true,
+      familyId: currentUser?.familyId,
     );
-    
+
     _rewards.add(newReward);
     await _saveRewards();
     return newReward.id;
@@ -391,7 +455,7 @@ class RewardService {
   }
 
   List<RewardItem> getActiveRewards() {
-    return _rewards.where((r) => r.isActive).toList();
+    return _rewards.where((r) => r.isActive && r.status == 'approved').toList();
   }
 
   List<RewardItem> getAvailableRewards(int currentPoints) {
@@ -406,4 +470,7 @@ class RewardService {
       r.category.toLowerCase().contains(lowercaseQuery)
     ).toList();
   }
+
+  // ========== Pending/Approval flow ========== 
+  // (Unified methods are defined above; removed duplicates)
 }

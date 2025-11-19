@@ -40,14 +40,13 @@ class _RewardsManagementScreenState extends State<RewardsManagementScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: Text(_canManageRewards ? 'Manage Rewards' : 'View Rewards'),
+        title: Text(_canManageRewards ? 'Manage Rewards' : 'Rewards'),
         actions: [
-          if (_canManageRewards)
-            IconButton(
-              onPressed: _addNewReward,
-              icon: const Icon(Icons.add),
-              tooltip: 'Add New Reward',
-            ),
+          IconButton(
+            onPressed: _addNewReward,
+            icon: Icon(_canManageRewards ? Icons.add : Icons.lightbulb),
+            tooltip: _canManageRewards ? 'Add New Reward' : 'Suggest a Reward',
+          ),
         ],
       ),
       body: ValueListenableBuilder<List<RewardItem>>(
@@ -211,8 +210,8 @@ class _RewardsManagementScreenState extends State<RewardsManagementScreen> {
             const SizedBox(height: 16),
             ElevatedButton.icon(
               onPressed: _addNewReward,
-              icon: const Icon(Icons.add),
-              label: const Text('Add Reward'),
+              icon: Icon(_canManageRewards ? Icons.add : Icons.lightbulb),
+              label: Text(_canManageRewards ? 'Add Reward' : 'Suggest Reward'),
             ),
           ],
         ],

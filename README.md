@@ -35,6 +35,7 @@ flutter run -d chrome --web-port=3000
 
 ```
 flutter run -d web-server --web-hostname=0.0.0.0 --web-port=3000
+flutter run -d web-server --web-hostname=127.0.0.1 --web-port=3000
 ```
 
 - Note on Wasm warnings: current deps include web secure storage which triggers Wasm dry run warnings. These do not block JS builds. To silence during build:

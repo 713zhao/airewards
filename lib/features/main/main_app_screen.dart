@@ -23,6 +23,7 @@ import '../auth/login_screen.dart';
 import '../family/family_dashboard_screen.dart';
 import '../family/family_management_screen.dart';
 import '../family/join_family_screen.dart';
+import '../rewards/presentation/pages/add_edit_reward_screen.dart';
 import '../rewards/presentation/pages/rewards_management_screen.dart';
 import '../settings/settings_screen.dart';
 import '../tasks/screens/add_task_screen.dart';
@@ -2571,14 +2572,28 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   ),
                 )
               else
-                ElevatedButton.icon(
-                  onPressed: _openRewardsManagement,
-                  icon: const Icon(Icons.visibility, size: 18),
-                  label: const Text('View'),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: Colors.grey,
-                    foregroundColor: Colors.white,
-                  ),
+                Row(
+                  children: [
+                    ElevatedButton.icon(
+                      onPressed: _openRewardsManagement,
+                      icon: const Icon(Icons.visibility, size: 18),
+                      label: const Text('View'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.grey,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ElevatedButton.icon(
+                      onPressed: _addRewardWish,
+                      icon: const Icon(Icons.add, size: 18),
+                      label: const Text('Add'),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: Colors.orange,
+                        foregroundColor: Colors.white,
+                      ),
+                    ),
+                  ],
                 ),
             ],
           ),
@@ -2637,9 +2652,10 @@ class _MainAppScreenState extends State<MainAppScreen> {
     return ValueListenableBuilder<List<RewardItem>>(
       valueListenable: RewardService().rewardsStream,
       builder: (context, allRewards, child) {
-        final activeRewards = allRewards.where((r) => r.isActive).toList();
+        final activeRewards = allRewards.where((r) => r.isActive && r.status == 'approved').toList();
+        final pendingRewards = allRewards.where((r) => r.status == 'pending').toList();
 
-        if (activeRewards.isEmpty) {
+        if (activeRewards.isEmpty && pendingRewards.isEmpty) {
           return Card(
             child: Padding(
               padding: const EdgeInsets.all(24),
@@ -2678,51 +2694,115 @@ class _MainAppScreenState extends State<MainAppScreen> {
 
         return Column(
           children: [
+            // Active approved rewards
             for (int i = 0; i < activeRewards.length; i += 2)
               Padding(
                 padding: const EdgeInsets.only(bottom: 12),
                 child: Row(
                   children: [
-                    Expanded(child: _buildRewardGridItem(activeRewards[i])),
+                    Expanded(child: _buildRewardGridItem(activeRewards[i], isEnabled: true)),
                     const SizedBox(width: 12),
                     if (i + 1 < activeRewards.length)
                       Expanded(
-                        child: _buildRewardGridItem(activeRewards[i + 1]),
+                        child: _buildRewardGridItem(activeRewards[i + 1], isEnabled: true),
                       )
                     else
                       const Expanded(child: SizedBox()),
                   ],
                 ),
               ),
+            // Pending rewards (disabled)
+            if (pendingRewards.isNotEmpty) ...[
+              const SizedBox(height: 16),
+              Padding(
+                padding: const EdgeInsets.only(bottom: 8),
+                child: Row(
+                  children: [
+                    Icon(Icons.hourglass_bottom, size: 16, color: Colors.amber.shade700),
+                    const SizedBox(width: 8),
+                    Text(
+                      'Pending Approval',
+                      style: TextStyle(
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                        color: Colors.amber.shade700,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              for (int i = 0; i < pendingRewards.length; i += 2)
+                Padding(
+                  padding: const EdgeInsets.only(bottom: 12),
+                  child: Row(
+                    children: [
+                      Expanded(child: _buildRewardGridItem(pendingRewards[i], isEnabled: false)),
+                      const SizedBox(width: 12),
+                      if (i + 1 < pendingRewards.length)
+                        Expanded(
+                          child: _buildRewardGridItem(pendingRewards[i + 1], isEnabled: false),
+                        )
+                      else
+                        const Expanded(child: SizedBox()),
+                    ],
+                  ),
+                ),
+            ],
           ],
         );
       },
     );
   }
 
-  Widget _buildRewardGridItem(RewardItem reward) {
-    final available = _currentPoints >= reward.points;
+  Widget _buildRewardGridItem(RewardItem reward, {bool isEnabled = true}) {
+    final available = isEnabled && _currentPoints >= reward.points;
     final icon = IconData(reward.iconCodePoint, fontFamily: 'MaterialIcons');
     final color = Color(reward.colorValue);
+    final isPending = reward.status == 'pending';
 
     return Card(
+      elevation: isPending ? 1 : 2,
+      color: isPending ? Colors.grey.shade50 : null,
       child: InkWell(
-        onTap: available
-            ? () => _redeemReward(reward.title, reward.points)
-            : null,
+        onTap: isPending
+            ? () => _showPendingRewardDialog(reward)
+            : (available
+                ? () => _redeemReward(reward.title, reward.points)
+                : null),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              CircleAvatar(
-                backgroundColor: available ? color : Colors.grey.shade300,
-                radius: 24,
-                child: Icon(
-                  icon,
-                  size: 24,
-                  color: available ? Colors.white : Colors.grey.shade600,
-                ),
+              Stack(
+                children: [
+                  CircleAvatar(
+                    backgroundColor: isEnabled && !isPending ? (available ? color : Colors.grey.shade300) : Colors.grey.shade200,
+                    radius: 24,
+                    child: Icon(
+                      icon,
+                      size: 24,
+                      color: isEnabled && !isPending ? (available ? Colors.white : Colors.grey.shade600) : Colors.grey.shade400,
+                    ),
+                  ),
+                  if (isPending)
+                    Positioned(
+                      right: 0,
+                      top: 0,
+                      child: Container(
+                        padding: const EdgeInsets.all(4),
+                        decoration: BoxDecoration(
+                          color: Colors.amber,
+                          shape: BoxShape.circle,
+                        ),
+                        child: const Icon(
+                          Icons.hourglass_bottom,
+                          size: 12,
+                          color: Colors.white,
+                        ),
+                      ),
+                    ),
+                ],
               ),
               const SizedBox(height: 12),
               Text(
@@ -2731,7 +2811,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                  color: available ? null : Theme.of(context).disabledColor,
+                  color: isEnabled && !isPending ? (available ? null : Theme.of(context).disabledColor) : Colors.grey.shade500,
                   fontWeight: FontWeight.w500,
                 ),
               ),
@@ -2739,21 +2819,23 @@ class _MainAppScreenState extends State<MainAppScreen> {
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
                 decoration: BoxDecoration(
-                  color: available
-                      ? color.withOpacity(0.1)
-                      : Colors.grey.shade100,
+                  color: isPending
+                      ? Colors.amber.shade50
+                      : (available
+                          ? color.withOpacity(0.1)
+                          : Colors.grey.shade100),
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  '${reward.points} pts',
+                  isPending ? 'Pending' : '${reward.points} pts',
                   style: TextStyle(
-                    color: available ? color : Colors.grey.shade600,
+                    color: isPending ? Colors.amber.shade700 : (available ? color : Colors.grey.shade600),
                     fontWeight: FontWeight.bold,
                     fontSize: 12,
                   ),
                 ),
               ),
-              if (!available) ...[
+              if (!available && !isPending) ...[
                 const SizedBox(height: 4),
                 Text(
                   'Need ${reward.points - _currentPoints} more',
@@ -3546,8 +3628,242 @@ class _MainAppScreenState extends State<MainAppScreen> {
     );
   }
 
+  void _addRewardWish() {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (context) => const AddEditRewardScreen()),
+    );
+  }
+
   void _openFamilySettings() {
     _showSnackBar('Family settings feature coming soon!');
+  }
+
+  void _showPendingRewardDialog(RewardItem reward) {
+    final titleController = TextEditingController(text: reward.title);
+    final descController = TextEditingController(text: reward.description);
+    final pointsController = TextEditingController(text: reward.points.toString());
+    final isParent = _canManageRewards;
+
+    showDialog(
+      context: context,
+      builder: (context) => StatefulBuilder(
+        builder: (context, setState) => AlertDialog(
+          title: Row(
+            children: [
+              Icon(
+                IconData(reward.iconCodePoint, fontFamily: 'MaterialIcons'),
+                color: Color(reward.colorValue),
+              ),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Text(
+                  isParent ? 'Review Reward Request' : 'Edit Reward Request',
+                  style: const TextStyle(fontSize: 18),
+                ),
+              ),
+            ],
+          ),
+          content: SingleChildScrollView(
+            child: Column(
+              mainAxisSize: MainAxisSize.min,
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                if (reward.createdBy != null && isParent) ...[
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.amber.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.amber.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.info_outline, size: 16, color: Colors.amber.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'Requested by child • ${_formatDate(reward.createdAt)}',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.amber.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                if (!isParent) ...[
+                  Container(
+                    padding: const EdgeInsets.all(8),
+                    decoration: BoxDecoration(
+                      color: Colors.blue.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.blue.shade200),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.edit_outlined, size: 16, color: Colors.blue.shade700),
+                        const SizedBox(width: 8),
+                        Expanded(
+                          child: Text(
+                            'You can edit your request while waiting for approval',
+                            style: TextStyle(
+                              fontSize: 12,
+                              color: Colors.blue.shade700,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                ],
+                TextField(
+                  controller: titleController,
+                  decoration: const InputDecoration(
+                    labelText: 'Reward Name',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: descController,
+                  decoration: const InputDecoration(
+                    labelText: 'Description',
+                    border: OutlineInputBorder(),
+                  ),
+                  maxLines: 3,
+                ),
+                const SizedBox(height: 12),
+                TextField(
+                  controller: pointsController,
+                  keyboardType: TextInputType.number,
+                  decoration: const InputDecoration(
+                    labelText: 'Points Required',
+                    border: OutlineInputBorder(),
+                  ),
+                ),
+              ],
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('Cancel'),
+            ),
+            if (!isParent)
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    final updatedReward = reward.copyWith(
+                      title: titleController.text.trim(),
+                      description: descController.text.trim(),
+                      points: int.tryParse(pointsController.text) ?? reward.points,
+                      updatedAt: DateTime.now(),
+                    );
+                    
+                    await _rewardService.editPendingReward(reward.id, updatedReward);
+                    if (context.mounted) Navigator.pop(context);
+                    _showSnackBar('Reward request updated!');
+                    await _rewardService.reloadRewards();
+                  } catch (e) {
+                    _showSnackBar('Error updating reward: $e');
+                  }
+                },
+                child: const Text('Save'),
+              ),
+            if (isParent) ...[
+              TextButton(
+                onPressed: () async {
+                  final confirmed = await showDialog<bool>(
+                    context: context,
+                    builder: (ctx) => AlertDialog(
+                      title: const Text('Reject Request'),
+                      content: const Text(
+                        'Are you sure you want to reject this reward request? This cannot be undone.',
+                      ),
+                      actions: [
+                        TextButton(
+                          onPressed: () => Navigator.pop(ctx, false),
+                          child: const Text('Cancel'),
+                        ),
+                        ElevatedButton(
+                          onPressed: () => Navigator.pop(ctx, true),
+                          style: ElevatedButton.styleFrom(
+                            backgroundColor: Colors.red,
+                            foregroundColor: Colors.white,
+                          ),
+                          child: const Text('Reject'),
+                        ),
+                      ],
+                    ),
+                  );
+
+                  if (confirmed == true) {
+                    try {
+                      await _rewardService.rejectReward(reward.id);
+                      if (context.mounted) Navigator.pop(context);
+                      _showSnackBar('Reward request rejected');
+                      await _rewardService.reloadRewards();
+                    } catch (e) {
+                      _showSnackBar('Error rejecting reward: $e');
+                    }
+                  }
+                },
+                style: TextButton.styleFrom(foregroundColor: Colors.red),
+                child: const Text('Reject'),
+              ),
+              ElevatedButton(
+                onPressed: () async {
+                  try {
+                    // Update reward details if edited
+                    final updatedReward = reward.copyWith(
+                      title: titleController.text.trim(),
+                      description: descController.text.trim(),
+                      points: int.tryParse(pointsController.text) ?? reward.points,
+                      updatedAt: DateTime.now(),
+                    );
+                    
+                    // Save edits first if any changes were made
+                    if (titleController.text.trim() != reward.title ||
+                        descController.text.trim() != reward.description ||
+                        (int.tryParse(pointsController.text) ?? reward.points) != reward.points) {
+                      await _rewardService.editPendingReward(reward.id, updatedReward);
+                    }
+                    
+                    // Then approve
+                    await _rewardService.approveReward(reward.id);
+                    if (context.mounted) Navigator.pop(context);
+                    _showSnackBar('Reward approved and added to catalog!');
+                    await _rewardService.reloadRewards();
+                  } catch (e) {
+                    _showSnackBar('Error approving reward: $e');
+                  }
+                },
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Approve'),
+              ),
+            ],
+          ],
+        ),
+      ),
+    );
+  }
+
+  String _formatDate(DateTime date) {
+    final now = DateTime.now();
+    final diff = now.difference(date);
+    
+    if (diff.inMinutes < 1) return 'just now';
+    if (diff.inMinutes < 60) return '${diff.inMinutes}m ago';
+    if (diff.inHours < 24) return '${diff.inHours}h ago';
+    if (diff.inDays < 7) return '${diff.inDays}d ago';
+    return '${date.month}/${date.day}/${date.year}';
   }
 
   void _redeemReward(String rewardName, int pointCost) {
