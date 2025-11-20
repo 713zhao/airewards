@@ -9,18 +9,22 @@ import '../../core/injection/injection.dart';
 import '../../core/models/reward_item.dart';
 import '../../core/models/task_model.dart';
 import '../../core/models/user_model.dart';
+import '../../core/models/goal_model.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/family_service.dart';
 import '../../core/services/reward_service.dart';
 import '../../core/services/task_generation_service.dart';
 import '../../core/services/task_service.dart';
 import '../../core/services/user_service.dart';
+import '../../core/services/goal_service.dart';
 import '../../core/theme/theme_extensions.dart';
 import '../../core/theme/theme_service.dart';
 import '../../features/testing/quality_assurance_dashboard.dart';
 import '../../shared/widgets/theme_demo_screen.dart';
 import '../../shared/widgets/banner_ad_widget.dart';
+import '../../shared/widgets/goal_progress_card.dart';
 import '../auth/login_screen.dart';
+import '../rewards/presentation/widgets/set_goal_dialog.dart';
 import '../family/family_dashboard_screen.dart';
 import '../family/family_management_screen.dart';
 import '../family/join_family_screen.dart';
@@ -44,6 +48,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
   final TaskService _taskService = TaskService();
   final RewardService _rewardService = RewardService();
   final TaskGenerationService _taskGenerationService = TaskGenerationService();
+  final GoalService _goalService = GoalService();
 
   // Local print override: silence all verbose prints in this screen
   void print(Object? object) {}
@@ -208,6 +213,11 @@ class _MainAppScreenState extends State<MainAppScreen> {
           _totalTasksDone = tasksDone;
           _totalRewards = redemptionHistory.length;
         });
+        
+        print('💰 _currentPoints set to: $_currentPoints');
+        
+        // Check if any active goal is completed
+        _checkGoalCompletion();
       }
 
       print(
@@ -391,6 +401,32 @@ class _MainAppScreenState extends State<MainAppScreen> {
           // Welcome section
           _buildWelcomeCard(),
           const SizedBox(height: 16),
+
+          // Active Goal
+          StreamBuilder<GoalModel?>(
+            stream: _goalService.watchActiveGoal(),
+            builder: (context, snapshot) {
+              print('🏠 Home tab goal StreamBuilder - connectionState: ${snapshot.connectionState}, hasData: ${snapshot.hasData}, hasError: ${snapshot.hasError}');
+              if (snapshot.hasError) {
+                print('❌ Home tab goal error: ${snapshot.error}');
+              }
+              if (snapshot.hasData && snapshot.data != null) {
+                print('✅ Home tab showing goal card with currentPoints: $_currentPoints');
+                return Column(
+                  children: [
+                    GoalProgressCard(
+                      goal: snapshot.data!,
+                      currentPoints: _currentPoints,
+                      onDelete: () => _deleteGoal(snapshot.data!.id),
+                    ),
+                    const SizedBox(height: 16),
+                  ],
+                );
+              }
+              print('ℹ️ Home tab not showing goal (no data or null)');
+              return const SizedBox.shrink();
+            },
+          ),
 
           // Quick stats
           _buildQuickStats(),
@@ -2602,6 +2638,83 @@ class _MainAppScreenState extends State<MainAppScreen> {
             ],
           ),
           const SizedBox(height: 16),
+
+          // Set Goal Button
+          StreamBuilder<GoalModel?>(
+            stream: _goalService.watchActiveGoal(),
+            builder: (context, snapshot) {
+              print('🎁 Rewards tab goal StreamBuilder - connectionState: ${snapshot.connectionState}, hasData: ${snapshot.hasData}, hasError: ${snapshot.hasError}');
+              if (snapshot.hasError) {
+                print('❌ Rewards tab goal error: ${snapshot.error}');
+              }
+              final hasGoal = snapshot.hasData && snapshot.data != null;
+              print('🎁 Rewards tab hasGoal: $hasGoal');
+              
+              return Column(
+                children: [
+                  if (hasGoal)
+                    GoalProgressCard(
+                      goal: snapshot.data!,
+                      currentPoints: _currentPoints,
+                      onDelete: () => _deleteGoal(snapshot.data!.id),
+                    )
+                  else
+                    Card(
+                      elevation: 2,
+                      child: InkWell(
+                        onTap: _showSetGoalDialog,
+                        borderRadius: BorderRadius.circular(12),
+                        child: Padding(
+                          padding: const EdgeInsets.all(16),
+                          child: Row(
+                            children: [
+                              Container(
+                                padding: const EdgeInsets.all(12),
+                                decoration: BoxDecoration(
+                                  color: Theme.of(context).colorScheme.primaryContainer,
+                                  borderRadius: BorderRadius.circular(8),
+                                ),
+                                child: Icon(
+                                  Icons.flag,
+                                  color: Theme.of(context).colorScheme.primary,
+                                ),
+                              ),
+                              const SizedBox(width: 16),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'Set a Goal',
+                                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                                        fontWeight: FontWeight.bold,
+                                      ),
+                                    ),
+                                    Text(
+                                      'Track your progress towards a reward or points target',
+                                      style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                                        color: Theme.of(context).colorScheme.onSurfaceVariant,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.arrow_forward_ios,
+                                size: 16,
+                                color: Theme.of(context).colorScheme.onSurfaceVariant,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                    ),
+                  const SizedBox(height: 16),
+                ],
+              );
+            },
+          ),
+
           _buildRewardGrid(),
           const SizedBox(height: 32),
           _buildTodayRewardHistory(),
@@ -3662,6 +3775,121 @@ class _MainAppScreenState extends State<MainAppScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const RewardsManagementScreen()),
     );
+  }
+
+  Future<void> _showSetGoalDialog() async {
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => SetGoalDialog(
+        currentPoints: _currentPoints,
+      ),
+    );
+
+    if (result == true && mounted) {
+      // Check if goal is already completed
+      await _checkGoalCompletion();
+    }
+  }
+
+  Future<void> _deleteGoal(String goalId) async {
+    final confirmed = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Remove Goal'),
+        content: const Text('Are you sure you want to remove this goal?'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(false),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.of(context).pop(true),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.red,
+              foregroundColor: Colors.white,
+            ),
+            child: const Text('Remove'),
+          ),
+        ],
+      ),
+    );
+
+    if (confirmed == true) {
+      try {
+        await _goalService.deleteGoal(goalId);
+        if (mounted) {
+          // Force a rebuild by calling setState
+          setState(() {});
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('Goal removed'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error removing goal: $e')),
+          );
+        }
+      }
+    }
+  }
+
+  Future<void> _checkGoalCompletion() async {
+    try {
+      final completed = await _goalService.checkAndCompleteGoal(_currentPoints);
+      
+      if (completed && mounted) {
+        // Show celebration dialog
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: Row(
+              children: [
+                const Icon(Icons.celebration, color: Colors.amber, size: 32),
+                const SizedBox(width: 12),
+                Text(
+                  'Goal Achieved!',
+                  style: Theme.of(context).textTheme.titleLarge?.copyWith(
+                    color: Colors.green,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            content: Column(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Text(
+                  '🎉 Congratulations! 🎉',
+                  style: TextStyle(fontSize: 24),
+                  textAlign: TextAlign.center,
+                ),
+                const SizedBox(height: 16),
+                const Text(
+                  'You\'ve reached your goal! Keep up the great work!',
+                  textAlign: TextAlign.center,
+                ),
+              ],
+            ),
+            actions: [
+              ElevatedButton(
+                onPressed: () => Navigator.of(context).pop(),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.green,
+                  foregroundColor: Colors.white,
+                ),
+                child: const Text('Awesome!'),
+              ),
+            ],
+          ),
+        );
+      }
+    } catch (e) {
+      print('Error checking goal completion: $e');
+    }
   }
 
   void _addRewardWish() {

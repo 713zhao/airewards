@@ -115,6 +115,22 @@ service cloud.firestore {
         );
     }
     
+    // Goals collection - User goals management
+    match /goals/{goalId} {
+      // Users can read/write their own goals
+      allow read, write: if request.auth != null 
+        && resource.data.userId == request.auth.uid;
+      
+      // Allow creating goals
+      allow create: if request.auth != null 
+        && request.resource.data.userId == request.auth.uid;
+      
+      // Parents can read their children's goals
+      allow read: if request.auth != null 
+        && isParentInFamily(request.auth.uid)
+        && isInSameFamily(request.auth.uid, resource.data.userId);
+    }
+    
     // Allow test collection for debugging (remove in production)
     match /test/{document=**} {
       allow read, write: if request.auth != null;
