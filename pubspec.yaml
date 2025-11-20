@@ -2,7 +2,7 @@ name: ai_rewards_system
 description: "AI Rewards System - A Flutter application for managing reward points, redemptions, and user engagement through gamification."
 publish_to: 'none' # Private package
 
-version: 1.0.0+1
+version: 1.1.0+2
 
 environment:
   sdk: ^3.9.2
@@ -10,6 +10,8 @@ environment:
 
 dependencies:
   flutter:
+    sdk: flutter
+  flutter_localizations:
     sdk: flutter
 
   # UI & Icons
@@ -49,7 +51,7 @@ dependencies:
   injectable: ^2.5.0
 
   # Utilities
-  intl: ^0.19.0
+  intl: ^0.20.2
   uuid: ^4.5.1
   crypto: ^3.0.6
   path: ^1.9.0
@@ -96,6 +98,7 @@ dev_dependencies:
   sqflite_common_ffi: ^2.3.3
 flutter:
   uses-material-design: true
+  generate: true
 
   # Assets
   assets:

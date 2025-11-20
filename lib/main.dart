@@ -1,9 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:hive_flutter/hive_flutter.dart';
 
 import 'core/injection/injection.dart';
+import 'core/l10n/app_localizations.dart';
 import 'core/services/auth_service.dart';
 import 'core/services/ad_service.dart';
+import 'core/services/language_service.dart';
 import 'core/models/user_model.dart';
 import 'core/theme/theme_service.dart';
 import 'shared/widgets/network_status_indicator.dart';
@@ -82,15 +85,27 @@ class AIRewardsApp extends StatefulWidget {
 
 class _AIRewardsAppState extends State<AIRewardsApp> {
   ThemeService? _themeService;
+  final LanguageService _languageService = LanguageService();
+  Locale? _locale;
 
   @override
   void initState() {
     super.initState();
+    _loadLanguage();
     try {
       _themeService = getIt<ThemeService>();
       _themeService?.addListener(_onThemeChanged);
     } catch (e) {
       debugPrint('Failed to get ThemeService: $e');
+    }
+  }
+
+  Future<void> _loadLanguage() async {
+    final savedLocale = await _languageService.getSavedLanguage();
+    if (mounted && savedLocale != null) {
+      setState(() {
+        _locale = savedLocale;
+      });
     }
   }
 
@@ -111,6 +126,14 @@ class _AIRewardsAppState extends State<AIRewardsApp> {
     return MaterialApp(
       title: 'AI Rewards System',
       navigatorKey: NavigationService.navigatorKey,
+      localizationsDelegates: const [
+        AppLocalizations.delegate,
+        GlobalMaterialLocalizations.delegate,
+        GlobalWidgetsLocalizations.delegate,
+        GlobalCupertinoLocalizations.delegate,
+      ],
+      supportedLocales: AppLocalizations.supportedLocales,
+      locale: _locale,
       theme: ThemeData(
         useMaterial3: true,
         colorScheme: ColorScheme.fromSeed(seedColor: Colors.blue),

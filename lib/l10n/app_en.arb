@@ -1,0 +1,57 @@
+{
+  "@@locale": "en",
+  "appTitle": "AI Rewards",
+  "settings": "Settings",
+  "general": "General",
+  "notifications": "Notifications",
+  "notificationsDesc": "Manage notification preferences",
+  "theme": "Theme",
+  "themeDesc": "Choose light or dark theme",
+  "language": "Language",
+  "languageDesc": "Select your preferred language",
+  "privacySecurity": "Privacy & Security",
+  "privacySettings": "Privacy Settings",
+  "privacySettingsDesc": "Control your data and privacy",
+  "accountSecurity": "Account Security",
+  "accountSecurityDesc": "Manage passwords and authentication",
+  "parentControls": "Parent Controls",
+  "familyManagement": "Family Management",
+  "familyManagementDesc": "Manage family members and settings",
+  "parentalControls": "Parental Controls",
+  "parentalControlsDesc": "Set controls and restrictions for children",
+  "dataManagement": "Data Management",
+  "exportData": "Export Data",
+  "exportDataDesc": "Download your family data",
+  "deleteAllData": "Delete ALL Data",
+  "deleteAllDataDesc": "Permanently delete all data (family-wide for parent)",
+  "restoreToDefault": "Restore to Default",
+  "restoreToDefaultDesc": "Reset all data and restore default tasks/rewards",
+  "fixChildTasks": "Fix Child Tasks (Debug)",
+  "fixChildTasksDesc": "Assign default tasks to existing children",
+  "aboutSupport": "About & Support",
+  "helpFaq": "Help & FAQ",
+  "helpFaqDesc": "Get help and find answers",
+  "about": "About",
+  "aboutDesc": "App version and information",
+  "contactSupport": "Contact Support",
+  "contactSupportDesc": "Get in touch with our support team",
+  "comingSoon": "{feature} coming soon!",
+  "@comingSoon": {
+    "placeholders": {
+      "feature": {
+        "type": "String"
+      }
+    }
+  },
+  "selectLanguage": "Select Language",
+  "english": "English",
+  "chinese": "中文 (Chinese)",
+  "languageChanged": "Language changed to {language}",
+  "@languageChanged": {
+    "placeholders": {
+      "language": {
+        "type": "String"
+      }
+    }
+  }
+}

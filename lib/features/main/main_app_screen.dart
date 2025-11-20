@@ -6,6 +6,7 @@ import 'package:flutter/services.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/injection/injection.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/models/reward_item.dart';
 import '../../core/models/task_model.dart';
 import '../../core/models/user_model.dart';
@@ -332,31 +333,31 @@ class _MainAppScreenState extends State<MainAppScreen> {
             _loadProfileStats();
           }
         },
-        destinations: const [
+        destinations: [
           NavigationDestination(
-            icon: Icon(Icons.home_outlined),
-            selectedIcon: Icon(Icons.home),
-            label: 'Home',
+            icon: const Icon(Icons.home_outlined),
+            selectedIcon: const Icon(Icons.home),
+            label: AppLocalizations.of(context).home,
           ),
           NavigationDestination(
-            icon: Icon(Icons.task_outlined),
-            selectedIcon: Icon(Icons.task),
-            label: 'Tasks',
+            icon: const Icon(Icons.task_outlined),
+            selectedIcon: const Icon(Icons.task),
+            label: AppLocalizations.of(context).tasks,
           ),
           NavigationDestination(
-            icon: Icon(Icons.redeem_outlined),
-            selectedIcon: Icon(Icons.redeem),
-            label: 'Rewards',
+            icon: const Icon(Icons.redeem_outlined),
+            selectedIcon: const Icon(Icons.redeem),
+            label: AppLocalizations.of(context).rewards,
           ),
           NavigationDestination(
-            icon: Icon(Icons.family_restroom_outlined),
-            selectedIcon: Icon(Icons.family_restroom),
-            label: 'Family',
+            icon: const Icon(Icons.family_restroom_outlined),
+            selectedIcon: const Icon(Icons.family_restroom),
+            label: AppLocalizations.of(context).translate('family'),
           ),
           NavigationDestination(
-            icon: Icon(Icons.person_outline),
-            selectedIcon: Icon(Icons.person),
-            label: 'Profile',
+            icon: const Icon(Icons.person_outline),
+            selectedIcon: const Icon(Icons.person),
+            label: AppLocalizations.of(context).profile,
           ),
         ],
       ),
@@ -364,7 +365,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
           ? FloatingActionButton.extended(
               onPressed: _quickEarnPoints,
               icon: const Icon(Icons.add),
-              label: const Text('Quick Task'),
+              label: Text(AppLocalizations.of(context).translate('quick_task')),
             )
           : _currentIndex == 1
           ? Column(
@@ -463,7 +464,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        'Welcome back!',
+                        AppLocalizations.of(context).translate('welcome_back'),
                         style: Theme.of(context).textTheme.headlineSmall,
                       ),
                       Text(
@@ -495,7 +496,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   ),
                   const SizedBox(width: 8),
                   Text(
-                    'Current Points: ${_currentPoints.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
+                    '${AppLocalizations.of(context).translate('current_points')}: ${_currentPoints.toString().replaceAllMapped(RegExp(r'(\d{1,3})(?=(\d{3})+(?!\d))'), (Match m) => '${m[1]},')}',
                     style: Theme.of(context).textTheme.titleMedium?.copyWith(
                       color: Theme.of(context).colorScheme.onPrimaryContainer,
                       fontWeight: FontWeight.bold,
@@ -518,7 +519,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Today\'s Progress',
+              AppLocalizations.of(context).translate('todays_progress'),
               style: Theme.of(context).textTheme.titleLarge,
             ),
             const SizedBox(height: 16),
@@ -580,30 +581,31 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   redemptionPointsSpentToday += task.pointValue.abs();
                 }
 
-                final pointsSubtitle = 'today';
+                final l10n = AppLocalizations.of(context);
+                final pointsSubtitle = l10n.translate('today');
                 final redemptionDetail = redemptionPointsSpentToday > 0
-                    ? ' (-$redemptionPointsSpentToday ${redemptionPointsSpentToday == 1 ? 'point' : 'points'})'
+                    ? ' (-$redemptionPointsSpentToday ${redemptionPointsSpentToday == 1 ? l10n.translate('point') : l10n.translate('points')})'
                     : '';
                 final rewardsSubtitle = redemptionsToday > 0
-                    ? '$redemptionsToday ${redemptionsToday == 1 ? 'reward' : 'rewards'} redeemed$redemptionDetail'
-                    : 'No redeemed';
+                    ? '$redemptionsToday ${redemptionsToday == 1 ? l10n.translate('reward') : l10n.translate('rewards')} ${l10n.translate('redeemed_lower')}$redemptionDetail'
+                    : l10n.translate('no_redeemed');
 
                 return Row(
                   children: [
                     Expanded(
                       child: _buildStatItem(
-                        'Tasks Done',
+                        l10n.translate('tasks_done'),
                         completedToday.toString(),
                         totalPendingToday > 0
-                            ? '/ ${completedToday + totalPendingToday} today'
-                            : 'today',
+                            ? '/ ${completedToday + totalPendingToday} ${l10n.translate('today')}'
+                            : l10n.translate('today'),
                         Icons.task_alt,
                         Colors.green,
                       ),
                     ),
                     Expanded(
                       child: _buildStatItem(
-                        'Points Earned',
+                        l10n.translate('points_earned'),
                         todayPoints.toString(),
                         pointsSubtitle,
                         Icons.trending_up,
@@ -612,7 +614,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                     ),
                     Expanded(
                       child: _buildStatItem(
-                        'Rewards Redeemed',
+                        l10n.translate('rewards_redeemed'),
                         redemptionsToday.toString(),
                         rewardsSubtitle,
                         Icons.redeem,
@@ -726,7 +728,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                         ),
                         const SizedBox(width: 8),
                         Text(
-                          'Family Progress',
+                          AppLocalizations.of(context).translate('family_progress'),
                           style: Theme.of(context).textTheme.titleLarge?.copyWith(
                             fontWeight: FontWeight.bold,
                           ),
@@ -735,7 +737,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                     ),
                     const SizedBox(height: 16),
                     Text(
-                      'Today\'s Leaderboard',
+                      AppLocalizations.of(context).translate('todays_leaderboard'),
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         fontWeight: FontWeight.w600,
                       ),
@@ -774,7 +776,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
         ? member['name'] as String
         : 'Member';
     final isCurrentUser = member['isCurrentUser'] as bool? ?? false;
-    final displayName = isCurrentUser ? '$name (You)' : name;
+    final displayName = isCurrentUser ? '$name (${AppLocalizations.of(context).translate('you')})' : name;
     final currentPoints =
         member['currentPoints'] as int? ??
         member['lifetimeNetPoints'] as int? ??
@@ -861,7 +863,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                       ),
                     ),
                     Text(
-                      'Current Points: ${_formatNumber(currentPoints)}',
+                      '${AppLocalizations.of(context).translate('current_points_label')}: ${_formatNumber(currentPoints)}',
                       style: theme.textTheme.bodySmall?.copyWith(
                         color: theme.colorScheme.onSurfaceVariant,
                       ),
@@ -878,20 +880,20 @@ class _MainAppScreenState extends State<MainAppScreen> {
             children: [
               _buildSummaryPill(
                 Icons.task_alt,
-                '$completedToday completed today',
+                '$completedToday ${AppLocalizations.of(context).translate('completed_today_label')}',
                 theme.colorScheme.primary,
               ),
               _buildSummaryPill(
                 Icons.trending_up,
-                '${pointsEarnedToday > 0 ? '+' : ''}${_formatNumber(pointsEarnedToday)} pts today',
+                '${pointsEarnedToday > 0 ? '+' : ''}${_formatNumber(pointsEarnedToday)} ${AppLocalizations.of(context).translate('pts_today')}',
                 Colors.green,
               ),
               if (pointsSpentToday > 0 || redemptionsToday > 0)
                 _buildSummaryPill(
                   Icons.remove_circle,
                   redemptionsToday > 0
-                      ? '$redemptionsToday redeemed today (-${_formatNumber(pointsSpentToday)} pts)'
-                      : '-${_formatNumber(pointsSpentToday)} pts spent today',
+                      ? '$redemptionsToday ${AppLocalizations.of(context).translate('redeemed_today')} (-${_formatNumber(pointsSpentToday)} ${AppLocalizations.of(context).translate('pts')})'
+                      : '-${_formatNumber(pointsSpentToday)} ${AppLocalizations.of(context).translate('pts_spent_today')}',
                   Colors.redAccent,
                 ),
             ],
@@ -904,26 +906,26 @@ class _MainAppScreenState extends State<MainAppScreen> {
               _buildSummaryPill(
                 Icons.redeem,
                 lifetimeRedemptions > 0
-                    ? '$lifetimeRedemptions total redeems${lifetimePointsSpent > 0 ? ' (-${_formatNumber(lifetimePointsSpent)} pts)' : ''}'
-                    : 'No redemptions yet',
+                    ? '$lifetimeRedemptions ${AppLocalizations.of(context).translate('total_redeems')}${lifetimePointsSpent > 0 ? ' (-${_formatNumber(lifetimePointsSpent)} ${AppLocalizations.of(context).translate('pts')})' : ''}'
+                    : AppLocalizations.of(context).translate('no_redemptions_yet'),
                 Colors.orange,
               ),
               if (lifetimePointsEarned > 0)
                 _buildSummaryPill(
                   Icons.trending_up_rounded,
-                  '${_formatNumber(lifetimePointsEarned)} pts earned lifetime',
+                  '${_formatNumber(lifetimePointsEarned)} ${AppLocalizations.of(context).translate('pts_earned_lifetime')}',
                   Colors.blue,
                 ),
               if (lifetimePointsSpent > 0)
                 _buildSummaryPill(
                   Icons.money_off,
-                  '-${_formatNumber(lifetimePointsSpent)} pts spent lifetime',
+                  '-${_formatNumber(lifetimePointsSpent)} ${AppLocalizations.of(context).translate('pts_spent_lifetime')}',
                   Colors.deepOrange,
                 ),
               if (lifetimeCompleted > 0)
                 _buildSummaryPill(
                   Icons.checklist_rtl,
-                  '$lifetimeCompleted tasks lifetime',
+                  '$lifetimeCompleted ${AppLocalizations.of(context).translate('tasks_lifetime')}',
                   theme.colorScheme.tertiary,
                 ),
             ],
@@ -2503,9 +2505,9 @@ class _MainAppScreenState extends State<MainAppScreen> {
                             ),
                             foregroundColor: Colors.orange,
                           ),
-                          child: const Text(
-                            'Undo',
-                            style: TextStyle(fontSize: 10),
+                          child: Text(
+                            AppLocalizations.of(context).translate('undo'),
+                            style: const TextStyle(fontSize: 10),
                           ),
                         ),
                       ),
@@ -2524,7 +2526,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                     backgroundColor: _getPriorityColor(task.priority),
                     foregroundColor: Colors.white,
                   ),
-                  child: const Text('Done', style: TextStyle(fontSize: 12)),
+                  child: Text(AppLocalizations.of(context).translate('done'), style: const TextStyle(fontSize: 12)),
                 ),
               )
             : Container(
@@ -2534,7 +2536,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   borderRadius: BorderRadius.circular(12),
                 ),
                 child: Text(
-                  task.status.name.toUpperCase(),
+                  _translateTaskStatus(task.status),
                   style: const TextStyle(
                     fontSize: 10,
                     fontWeight: FontWeight.bold,
@@ -2598,14 +2600,14 @@ class _MainAppScreenState extends State<MainAppScreen> {
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
               Text(
-                'Reward Store',
+                AppLocalizations.of(context).translate('available_rewards'),
                 style: Theme.of(context).textTheme.headlineMedium,
               ),
               if (_canManageRewards)
                 ElevatedButton.icon(
                   onPressed: _openRewardsManagement,
                   icon: const Icon(Icons.settings, size: 18),
-                  label: const Text('Manage'),
+                  label: Text(AppLocalizations.of(context).translate('manage')),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: Colors.purple,
                     foregroundColor: Colors.white,
@@ -2617,7 +2619,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                     ElevatedButton.icon(
                       onPressed: _openRewardsManagement,
                       icon: const Icon(Icons.visibility, size: 18),
-                      label: const Text('View'),
+                      label: Text(AppLocalizations.of(context).translate('view')),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.grey,
                         foregroundColor: Colors.white,
@@ -2627,7 +2629,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                     ElevatedButton.icon(
                       onPressed: _addRewardWish,
                       icon: const Icon(Icons.add, size: 18),
-                      label: const Text('Add'),
+                      label: Text(AppLocalizations.of(context).translate('add')),
                       style: ElevatedButton.styleFrom(
                         backgroundColor: Colors.orange,
                         foregroundColor: Colors.white,
@@ -2685,13 +2687,13 @@ class _MainAppScreenState extends State<MainAppScreen> {
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text(
-                                      'Set a Goal',
+                                      AppLocalizations.of(context).translate('set_goal'),
                                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                                         fontWeight: FontWeight.bold,
                                       ),
                                     ),
                                     Text(
-                                      'Track your progress towards a reward or points target',
+                                      AppLocalizations.of(context).translate('your_goal'),
                                       style: Theme.of(context).textTheme.bodySmall?.copyWith(
                                         color: Theme.of(context).colorScheme.onSurfaceVariant,
                                       ),
@@ -2975,7 +2977,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Text('Profile', style: Theme.of(context).textTheme.headlineMedium),
+          Text(AppLocalizations.of(context).profile, style: Theme.of(context).textTheme.headlineMedium),
           const SizedBox(height: 16),
           _buildProfileCard(),
           const SizedBox(height: 16),
@@ -3011,7 +3013,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              'Member since ${_formatMemberSinceDate(AuthService.currentUser?.createdAt ?? DateTime.now())}',
+              '${AppLocalizations.of(context).translate('joined')} ${_formatMemberSinceDate(AuthService.currentUser?.createdAt ?? DateTime.now())}',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                 color: Theme.of(context).colorScheme.onSurfaceVariant,
               ),
@@ -3021,11 +3023,11 @@ class _MainAppScreenState extends State<MainAppScreen> {
               mainAxisAlignment: MainAxisAlignment.spaceEvenly,
               children: [
                 _buildProfileStat(
-                  'Total Points',
+                  AppLocalizations.of(context).translate('total_points'),
                   _formatNumber(_currentPoints),
                 ),
-                _buildProfileStat('Tasks Done', _totalTasksDone.toString()),
-                _buildProfileStat('Rewards', _totalRewards.toString()),
+                _buildProfileStat(AppLocalizations.of(context).translate('tasks_done'), _totalTasksDone.toString()),
+                _buildProfileStat(AppLocalizations.of(context).translate('rewards'), _totalRewards.toString()),
               ],
             ),
           ],
@@ -3062,26 +3064,26 @@ class _MainAppScreenState extends State<MainAppScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Achievements', style: Theme.of(context).textTheme.titleLarge),
+            Text(AppLocalizations.of(context).translate('achievements'), style: Theme.of(context).textTheme.titleLarge),
             const SizedBox(height: 12),
             _buildAchievementItem(
-              'First Task',
-              'Complete your first task',
+              AppLocalizations.of(context).translate('first_task'),
+              AppLocalizations.of(context).translate('complete_first_task'),
               hasFirstTask,
             ),
             _buildAchievementItem(
-              'Week Streak',
-              'Complete 7 tasks',
+              AppLocalizations.of(context).translate('week_streak'),
+              AppLocalizations.of(context).translate('complete_7_tasks'),
               hasWeekStreak,
             ),
             _buildAchievementItem(
-              'Point Collector',
-              'Earn 1000 points',
+              AppLocalizations.of(context).translate('point_collector'),
+              AppLocalizations.of(context).translate('earn_1000_points'),
               hasPointCollector,
             ),
             _buildAchievementItem(
-              'Task Master',
-              'Complete 50 tasks',
+              AppLocalizations.of(context).translate('task_master'),
+              AppLocalizations.of(context).translate('complete_50_tasks'),
               hasTaskMaster,
             ),
           ],
@@ -3138,44 +3140,44 @@ class _MainAppScreenState extends State<MainAppScreen> {
             children: [
               ListTile(
                 leading: const Icon(Icons.settings),
-                title: const Text('Settings'),
+                title: Text(AppLocalizations.of(context).settings),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: _openSettings,
               ),
               ListTile(
                 leading: const Icon(Icons.family_restroom),
-                title: const Text('Family Management'),
+                title: Text(AppLocalizations.of(context).translate('family_management')),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: _openFamilySettings,
               ),
               ListTile(
                 leading: const Icon(Icons.history),
-                title: const Text('Transaction History'),
+                title: Text(AppLocalizations.of(context).translate('transaction_history')),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: _viewAllHistory,
               ),
               ListTile(
                 leading: const Icon(Icons.help_outline),
-                title: const Text('Help & Support'),
+                title: Text(AppLocalizations.of(context).translate('help_support')),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: _openHelp,
               ),
               const Divider(height: 1),
               ListTile(
                 leading: const Icon(Icons.info_outline),
-                title: const Text('About AI Rewards'),
+                title: Text(AppLocalizations.of(context).translate('about_ai_rewards')),
                 trailing: const Icon(Icons.open_in_new),
                 onTap: () => _openInfoPage('about.html'),
               ),
               ListTile(
                 leading: const Icon(Icons.privacy_tip_outlined),
-                title: const Text('Privacy Policy'),
+                title: Text(AppLocalizations.of(context).translate('privacy_policy')),
                 trailing: const Icon(Icons.open_in_new),
                 onTap: () => _openInfoPage('privacy.html'),
               ),
               ListTile(
                 leading: const Icon(Icons.mail_outline),
-                title: const Text('Contact'),
+                title: Text(AppLocalizations.of(context).translate('contact')),
                 trailing: const Icon(Icons.open_in_new),
                 onTap: () => _openInfoPage('contact.html'),
               ),
@@ -3192,7 +3194,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
               foregroundColor: Theme.of(context).colorScheme.onError,
               padding: const EdgeInsets.all(16),
             ),
-            child: const Text('Logout'),
+            child: Text(AppLocalizations.of(context).translate('logout')),
           ),
         ),
       ],
@@ -3239,12 +3241,12 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Family',
+                      AppLocalizations.of(context).translate('family'),
                       style: Theme.of(context).textTheme.headlineMedium
                           ?.copyWith(fontWeight: FontWeight.bold),
                     ),
                     Text(
-                      isParent ? 'Manage your family' : 'Join your family',
+                      isParent ? AppLocalizations.of(context).translate('manage_family') : AppLocalizations.of(context).translate('family'),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Colors.grey.shade600,
                       ),
@@ -3361,14 +3363,14 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      'Join Family',
+                      AppLocalizations.of(context).translate('join_family'),
                       style: Theme.of(context).textTheme.titleLarge?.copyWith(
                         fontWeight: FontWeight.bold,
                       ),
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'Use an invitation code from your parent to join your family.',
+                      AppLocalizations.of(context).translate('use_invitation_code'),
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                         color: Colors.grey.shade600,
                       ),
@@ -3379,7 +3381,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                       child: ElevatedButton.icon(
                         onPressed: _openJoinFamily,
                         icon: const Icon(Icons.family_restroom),
-                        label: const Text('Join Family'),
+                        label: Text(AppLocalizations.of(context).translate('join_family')),
                         style: ElevatedButton.styleFrom(
                           padding: const EdgeInsets.symmetric(vertical: 16),
                         ),
@@ -3410,7 +3412,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(
-              'Family Status',
+              AppLocalizations.of(context).translate('family_status'),
               style: Theme.of(
                 context,
               ).textTheme.titleMedium?.copyWith(fontWeight: FontWeight.bold),
@@ -3423,15 +3425,15 @@ class _MainAppScreenState extends State<MainAppScreen> {
                 future: _getFamilyDetails(currentUser!.familyId!),
                 builder: (context, snapshot) {
                   if (snapshot.connectionState == ConnectionState.waiting) {
-                    return const Row(
+                    return Row(
                       children: [
-                        SizedBox(
+                        const SizedBox(
                           width: 16,
                           height: 16,
                           child: CircularProgressIndicator(strokeWidth: 2),
                         ),
-                        SizedBox(width: 8),
-                        Text('Loading family information...'),
+                        const SizedBox(width: 8),
+                        Text(AppLocalizations.of(context).translate('loading_family_info')),
                       ],
                     );
                   }
@@ -3444,10 +3446,10 @@ class _MainAppScreenState extends State<MainAppScreen> {
                           color: Colors.orange.shade600,
                         ),
                         const SizedBox(width: 8),
-                        const Expanded(
+                        Expanded(
                           child: Text(
-                            'Unable to load family information',
-                            style: TextStyle(color: Colors.orange),
+                            AppLocalizations.of(context).translate('unable_to_load_family'),
+                            style: const TextStyle(color: Colors.orange),
                           ),
                         ),
                       ],
@@ -3473,8 +3475,8 @@ class _MainAppScreenState extends State<MainAppScreen> {
                           Expanded(
                             child: Text(
                               isParent
-                                  ? 'Managing family: ${familyName ?? "Unknown"}'
-                                  : 'Member of ${parentName != null ? "$parentName's" : "a"} family',
+                                  ? '${AppLocalizations.of(context).translate('managing_family')}: ${familyName ?? AppLocalizations.of(context).translate('unknown')}'
+                                  : '${AppLocalizations.of(context).translate('member_of')} ${parentName != null ? "$parentName's" : "a"} ${AppLocalizations.of(context).translate('family').toLowerCase()}',
                               style: TextStyle(
                                 color: Colors.green.shade600,
                                 fontWeight: FontWeight.w500,
@@ -3500,14 +3502,14 @@ class _MainAppScreenState extends State<MainAppScreen> {
                             children: [
                               if (isParent) ...[
                                 Text(
-                                  'Family: ${familyName ?? "Unknown"}',
+                                  '${AppLocalizations.of(context).translate('family_label')}: ${familyName ?? AppLocalizations.of(context).translate('unknown')}',
                                   style: TextStyle(
                                     fontWeight: FontWeight.w500,
                                     color: Colors.blue.shade700,
                                   ),
                                 ),
                                 Text(
-                                  '$childrenCount ${childrenCount == 1 ? "child" : "children"}',
+                                  '$childrenCount ${childrenCount == 1 ? AppLocalizations.of(context).translate('child_singular') : AppLocalizations.of(context).translate('children_plural')}',
                                   style: TextStyle(
                                     fontSize: 13,
                                     color: Colors.blue.shade600,
@@ -3516,7 +3518,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                               ] else ...[
                                 if (parentName != null) ...[
                                   Text(
-                                    'Parent: $parentName',
+                                    '${AppLocalizations.of(context).translate('parent_label')}: $parentName',
                                     style: TextStyle(
                                       fontWeight: FontWeight.w500,
                                       color: Colors.blue.shade700,
@@ -3525,7 +3527,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                                 ],
                                 if (familyName != null) ...[
                                   Text(
-                                    'Family: $familyName',
+                                    '${AppLocalizations.of(context).translate('family_label')}: $familyName',
                                     style: TextStyle(
                                       fontSize: 13,
                                       color: Colors.blue.shade600,
@@ -3549,7 +3551,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      'Not part of any family yet',
+                      AppLocalizations.of(context).translate('not_part_of_family'),
                       style: TextStyle(
                         color: Colors.blue.shade600,
                         fontWeight: FontWeight.w500,
@@ -3561,8 +3563,8 @@ class _MainAppScreenState extends State<MainAppScreen> {
               const SizedBox(height: 8),
               Text(
                 isParent
-                    ? 'Create a family to start managing tasks and rewards for your children.'
-                    : 'Join your family to access tasks, earn rewards, and track your progress.',
+                    ? AppLocalizations.of(context).translate('create_family_description')
+                    : AppLocalizations.of(context).translate('join_family_description'),
                 style: TextStyle(color: Colors.grey.shade600, fontSize: 13),
               ),
             ],
@@ -3674,9 +3676,9 @@ class _MainAppScreenState extends State<MainAppScreen> {
   void _quickEarnPoints() {
     if (_currentIndex == 1 && _isSelectedDateInPast()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Tasks can only be created for today. Switch back to today to add new tasks.',
+            AppLocalizations.of(context).translate('tasks_only_today'),
           ),
         ),
       );
@@ -3752,9 +3754,9 @@ class _MainAppScreenState extends State<MainAppScreen> {
   void _addNewTask() {
     if (_currentIndex == 1 && _isSelectedDateInPast()) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
+        SnackBar(
           content: Text(
-            'Tasks can only be created for today. Switch back to today to add new tasks.',
+            AppLocalizations.of(context).translate('tasks_only_today'),
           ),
         ),
       );
@@ -4168,7 +4170,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
                 _showSnackBar('Error redeeming reward: $e');
               }
             },
-            child: const Text('Redeem'),
+            child: Text(AppLocalizations.of(context).translate('redeem')),
           ),
         ],
       ),
@@ -4180,14 +4182,14 @@ class _MainAppScreenState extends State<MainAppScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Complete Task'),
+        title: Text(AppLocalizations.of(context).translate('complete')),
         content: Text(
-          'Are you sure you want to mark "${task.title}" as completed?\n\nYou will earn ${task.pointValue} points.',
+          '${AppLocalizations.of(context).translate('mark_as_completed')} "${task.title}" ${AppLocalizations.of(context).translate('as_completed')}\n\n${AppLocalizations.of(context).translate('you_will_earn')} ${task.pointValue} ${AppLocalizations.of(context).translate('points')}.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -4195,7 +4197,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
               backgroundColor: _getPriorityColor(task.priority),
               foregroundColor: Colors.white,
             ),
-            child: const Text('Complete'),
+            child: Text(AppLocalizations.of(context).translate('complete')),
           ),
         ],
       ),
@@ -4211,14 +4213,14 @@ class _MainAppScreenState extends State<MainAppScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('Undo Task Completion'),
+        title: Text(AppLocalizations.of(context).translate('undo_task_completion')),
         content: Text(
-          'Are you sure you want to undo the completion of "${task.title}"?\n\nYou will lose ${task.pointValue} points.',
+          '${AppLocalizations.of(context).translate('undo_completion_message')} "${task.title}"?\n\n${AppLocalizations.of(context).translate('you_will_lose')} ${task.pointValue} ${AppLocalizations.of(context).translate('points')}.',
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(false),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).translate('cancel')),
           ),
           ElevatedButton(
             onPressed: () => Navigator.of(context).pop(true),
@@ -4226,7 +4228,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
               backgroundColor: Colors.orange,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Undo'),
+            child: Text(AppLocalizations.of(context).translate('undo')),
           ),
         ],
       ),
@@ -4292,7 +4294,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
         });
 
         _showSnackBar(
-          '${task.title} completion undone! -${task.pointValue} points',
+          '${task.title} ${AppLocalizations.of(context).translate('completion_undone')} -${task.pointValue} ${AppLocalizations.of(context).translate('points')}',
         );
 
         // Reload points from database to ensure accuracy
@@ -4300,7 +4302,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
       }
     } catch (e) {
       if (mounted) {
-        _showSnackBar('Error undoing task completion: $e');
+        _showSnackBar('${AppLocalizations.of(context).translate('error_undoing_task')}: $e');
       }
     }
   }
@@ -4566,9 +4568,20 @@ class _MainAppScreenState extends State<MainAppScreen> {
     return selectedOnly.isBefore(todayOnly);
   }
 
+  String _translateTaskStatus(TaskStatus status) {
+    switch (status) {
+      case TaskStatus.pending:
+        return AppLocalizations.of(context).translate('pending').toUpperCase();
+      case TaskStatus.completed:
+        return AppLocalizations.of(context).translate('completed').toUpperCase();
+      default:
+        return status.name.toUpperCase();
+    }
+  }
+
   String _getSelectedDateTitle() {
     if (_isToday()) {
-      return 'Today\'s Tasks';
+      return AppLocalizations.of(context).translate('todays_tasks');
     } else {
       final today = DateTime.now();
       final tomorrow = today.add(const Duration(days: 1));
@@ -4577,31 +4590,31 @@ class _MainAppScreenState extends State<MainAppScreen> {
       if (_selectedDate.year == tomorrow.year &&
           _selectedDate.month == tomorrow.month &&
           _selectedDate.day == tomorrow.day) {
-        return 'Tomorrow\'s Tasks';
+        return AppLocalizations.of(context).translate('tomorrows_tasks');
       } else if (_selectedDate.year == yesterday.year &&
           _selectedDate.month == yesterday.month &&
           _selectedDate.day == yesterday.day) {
-        return 'Yesterday\'s Tasks';
+        return AppLocalizations.of(context).translate('yesterdays_tasks');
       } else {
-        return 'Tasks';
+        return AppLocalizations.of(context).translate('tasks');
       }
     }
   }
 
   String _formatSelectedDateSubtitle() {
     final months = [
-      'January',
-      'February',
-      'March',
-      'April',
-      'May',
-      'June',
-      'July',
-      'August',
-      'September',
-      'October',
-      'November',
-      'December',
+      AppLocalizations.of(context).translate('january'),
+      AppLocalizations.of(context).translate('february'),
+      AppLocalizations.of(context).translate('march'),
+      AppLocalizations.of(context).translate('april'),
+      AppLocalizations.of(context).translate('may'),
+      AppLocalizations.of(context).translate('june'),
+      AppLocalizations.of(context).translate('july'),
+      AppLocalizations.of(context).translate('august'),
+      AppLocalizations.of(context).translate('september'),
+      AppLocalizations.of(context).translate('october'),
+      AppLocalizations.of(context).translate('november'),
+      AppLocalizations.of(context).translate('december'),
     ];
 
     return '${months[_selectedDate.month - 1]} ${_selectedDate.day}, ${_selectedDate.year}';
@@ -4609,18 +4622,18 @@ class _MainAppScreenState extends State<MainAppScreen> {
 
   String _formatSelectedDate() {
     final months = [
-      'Jan',
-      'Feb',
-      'Mar',
-      'Apr',
-      'May',
-      'Jun',
-      'Jul',
-      'Aug',
-      'Sep',
-      'Oct',
-      'Nov',
-      'Dec',
+      AppLocalizations.of(context).translate('jan'),
+      AppLocalizations.of(context).translate('feb'),
+      AppLocalizations.of(context).translate('mar'),
+      AppLocalizations.of(context).translate('apr'),
+      AppLocalizations.of(context).translate('may_short'),
+      AppLocalizations.of(context).translate('jun'),
+      AppLocalizations.of(context).translate('jul'),
+      AppLocalizations.of(context).translate('aug'),
+      AppLocalizations.of(context).translate('sep'),
+      AppLocalizations.of(context).translate('oct'),
+      AppLocalizations.of(context).translate('nov'),
+      AppLocalizations.of(context).translate('dec'),
     ];
 
     return '${months[_selectedDate.month - 1]} ${_selectedDate.day}';
@@ -4642,7 +4655,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
     if (nextOnly.isAfter(todayOnly)) {
       // Prevent navigating into the future
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Cannot navigate to future dates')),
+        SnackBar(content: Text(AppLocalizations.of(context).translate('cannot_navigate_future'))),
       );
       return;
     }
@@ -4663,9 +4676,9 @@ class _MainAppScreenState extends State<MainAppScreen> {
     }
 
     if (_isToday()) {
-      return 'No tasks for today';
+      return AppLocalizations.of(context).translate('no_tasks_for_today');
     } else {
-      return 'No tasks scheduled for this date';
+      return AppLocalizations.of(context).translate('no_tasks_scheduled');
     }
   }
 
@@ -4810,7 +4823,7 @@ class _TaskHistoryScreenState extends State<TaskHistoryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Task History'),
+        title: Text(AppLocalizations.of(context).translate('task_history')),
         centerTitle: true,
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
@@ -4835,7 +4848,7 @@ class _TaskHistoryScreenState extends State<TaskHistoryScreen> {
                   ),
                   const SizedBox(height: 16),
                   Text(
-                    'Error loading history',
+                    AppLocalizations.of(context).translate('error_loading_history'),
                     style: theme.textTheme.titleMedium,
                   ),
                   const SizedBox(height: 8),

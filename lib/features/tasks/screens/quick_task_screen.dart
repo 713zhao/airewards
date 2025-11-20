@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import '../../../core/services/task_service.dart';
 import '../../../core/services/auth_service.dart';
 import '../../../core/models/task_model.dart';
+import '../../../core/l10n/app_localizations.dart';
 
 class QuickTaskScreen extends StatefulWidget {
   const QuickTaskScreen({super.key});
@@ -33,8 +34,8 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
     
     if (title.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('Please enter a task title or select a preset'),
+        SnackBar(
+          content: Text(AppLocalizations.of(context).translate('please_enter_title')),
           backgroundColor: Colors.orange,
           behavior: SnackBarBehavior.floating,
         ),
@@ -190,7 +191,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Quick Task'),
+        title: Text(AppLocalizations.of(context).translate('quick_task')),
         centerTitle: true,
         backgroundColor: theme.colorScheme.surface,
         foregroundColor: theme.colorScheme.onSurface,
@@ -219,7 +220,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                           ),
                           const SizedBox(height: 8),
                           Text(
-                            'Quick Task Creation',
+                            AppLocalizations.of(context).translate('create_task'),
                             style: theme.textTheme.headlineSmall?.copyWith(
                               fontWeight: FontWeight.bold,
                               color: theme.colorScheme.primary,
@@ -227,7 +228,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                           ),
                           const SizedBox(height: 4),
                           Text(
-                            'Create a task quickly with preset values',
+                            AppLocalizations.of(context).translate('select_preset'),
                             style: theme.textTheme.bodyMedium?.copyWith(
                               color: theme.colorScheme.onSurfaceVariant,
                             ),
@@ -242,7 +243,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
 
                   // Quick Presets Section
                   Text(
-                    'Quick Presets',
+                    AppLocalizations.of(context).translate('select_preset'),
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -284,7 +285,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                               ),
                               const SizedBox(height: 12),
                               Text(
-                                'No Quick Tasks Configured',
+                                AppLocalizations.of(context).translate('no_quick_tasks'),
                                 style: theme.textTheme.titleMedium?.copyWith(
                                   color: theme.colorScheme.outline,
                                   fontWeight: FontWeight.w500,
@@ -292,7 +293,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                               ),
                               const SizedBox(height: 4),
                               Text(
-                                'Create tasks below and enable "Show in Quick Tasks" to see them here for quick daily creation.',
+                                AppLocalizations.of(context).translate('enable_quick_tasks_desc'),
                                 style: theme.textTheme.bodySmall?.copyWith(
                                   color: theme.colorScheme.outline,
                                 ),
@@ -353,7 +354,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
 
                   // Custom Task Section
                   Text(
-                    'Custom Quick Task',
+                    AppLocalizations.of(context).translate('custom_quick_task'),
                     style: theme.textTheme.titleMedium?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -364,8 +365,8 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                   TextField(
                     controller: _titleController,
                     decoration: InputDecoration(
-                      labelText: 'Task Title',
-                      hintText: 'Enter a quick task title',
+                      labelText: AppLocalizations.of(context).translate('task_title'),
+                      hintText: AppLocalizations.of(context).translate('enter_quick_task_title'),
                       prefixIcon: const Icon(Icons.task_alt),
                       border: OutlineInputBorder(
                         borderRadius: BorderRadius.circular(12),
@@ -386,7 +387,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                         child: DropdownButtonFormField<String>(
                           initialValue: _selectedCategory,
                           decoration: InputDecoration(
-                            labelText: 'Category',
+                            labelText: AppLocalizations.of(context).translate('category'),
                             prefixIcon: const Icon(Icons.category),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -415,7 +416,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                         child: DropdownButtonFormField<int>(
                           initialValue: _selectedPoints,
                           decoration: InputDecoration(
-                            labelText: 'Points',
+                            labelText: AppLocalizations.of(context).translate('points'),
                             prefixIcon: const Icon(Icons.stars),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -453,9 +454,9 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                       ),
                       elevation: 2,
                     ),
-                    child: const Text(
-                      'Create Quick Task',
-                      style: TextStyle(
+                    child: Text(
+                      AppLocalizations.of(context).translate('create_quick_task'),
+                      style: const TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.w600,
                       ),
@@ -469,7 +470,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Manage Tasks',
+                        AppLocalizations.of(context).translate('manage_tasks_lower'),
                         style: theme.textTheme.titleMedium?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -477,7 +478,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                       TextButton.icon(
                         onPressed: _showAllQuickTasks,
                         icon: const Icon(Icons.list, size: 16),
-                        label: const Text('View All Quick Tasks'),
+                        label: Text(AppLocalizations.of(context).translate('view_all_quick_tasks')),
                       ),
                     ],
                   ),
@@ -625,7 +626,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
                   Text(
-                    'All Quick Tasks',
+                    AppLocalizations.of(context).translate('all_quick_tasks'),
                     style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
@@ -724,8 +725,8 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
                   minimumSize: const Size(80, 32),
-                ),
-                child: const Text('Complete'),
+                  ),
+                child: Text(AppLocalizations.of(context).translate('complete')),
               ),
         isThreeLine: task.completedAt != null,
       ),

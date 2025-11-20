@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import '../../../../core/models/goal_model.dart';
 import '../../../../core/services/goal_service.dart';
+import '../../core/l10n/app_localizations.dart';
 
 /// Widget to display goal progress card
 class GoalProgressCard extends StatefulWidget {
@@ -119,7 +120,7 @@ class _GoalProgressCardState extends State<GoalProgressCard> {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Your Goal',
+                          AppLocalizations.of(context).translate('your_goal_label'),
                           style: Theme.of(context).textTheme.labelMedium?.copyWith(
                             color: Theme.of(context).colorScheme.onSurfaceVariant,
                           ),
@@ -137,7 +138,7 @@ class _GoalProgressCardState extends State<GoalProgressCard> {
                     IconButton(
                       icon: const Icon(Icons.close),
                       onPressed: widget.onDelete,
-                      tooltip: 'Remove goal',
+                      tooltip: AppLocalizations.of(context).translate('remove_goal'),
                     ),
                 ],
               ),
@@ -152,7 +153,7 @@ class _GoalProgressCardState extends State<GoalProgressCard> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       Text(
-                        'Progress',
+                        AppLocalizations.of(context).translate('progress_label'),
                         style: Theme.of(context).textTheme.labelMedium,
                       ),
                       Text(
@@ -189,24 +190,24 @@ class _GoalProgressCardState extends State<GoalProgressCard> {
                     child: _buildStatItem(
                       context,
                       icon: Icons.trending_up,
-                      label: 'Current',
-                      value: '${widget.currentPoints} pts',
+                      label: AppLocalizations.of(context).translate('current'),
+                      value: '${widget.currentPoints} ${AppLocalizations.of(context).translate('pts')}',
                     ),
                   ),
                   Expanded(
                     child: _buildStatItem(
                       context,
                       icon: Icons.flag,
-                      label: 'Target',
-                      value: '${widget.goal.targetPoints} pts',
+                      label: AppLocalizations.of(context).translate('target'),
+                      value: '${widget.goal.targetPoints} ${AppLocalizations.of(context).translate('pts')}',
                     ),
                   ),
                   Expanded(
                     child: _buildStatItem(
                       context,
                       icon: Icons.info_outline,
-                      label: 'Needed',
-                      value: isCompleted ? 'Done!' : '$pointsNeeded pts',
+                      label: AppLocalizations.of(context).translate('needed'),
+                      value: isCompleted ? AppLocalizations.of(context).translate('done_exclamation') : '$pointsNeeded ${AppLocalizations.of(context).translate('pts')}',
                       valueColor: isCompleted ? Colors.green : null,
                     ),
                   ),
@@ -236,8 +237,8 @@ class _GoalProgressCardState extends State<GoalProgressCard> {
                       Expanded(
                         child: Text(
                           _estimatedDays == 0
-                              ? 'Goal reached!'
-                              : 'Estimated: ~$_estimatedDays day${_estimatedDays == 1 ? '' : 's'} to reach goal',
+                              ? AppLocalizations.of(context).translate('goal_reached')
+                              : '${AppLocalizations.of(context).translate('estimated')}: ~$_estimatedDays ${_estimatedDays == 1 ? AppLocalizations.of(context).translate('day') : AppLocalizations.of(context).translate('days')} ${AppLocalizations.of(context).translate('to_reach_goal')}',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             fontWeight: FontWeight.w500,
                           ),
@@ -273,7 +274,7 @@ class _GoalProgressCardState extends State<GoalProgressCard> {
                       const SizedBox(width: 12),
                       Expanded(
                         child: Text(
-                          'Complete more tasks to see estimated completion time',
+                          AppLocalizations.of(context).translate('complete_more_tasks_estimate'),
                           style: Theme.of(context).textTheme.bodySmall,
                         ),
                       ),
@@ -300,7 +301,7 @@ class _GoalProgressCardState extends State<GoalProgressCard> {
                       ),
                       const SizedBox(width: 8),
                       Text(
-                        '🎉 Goal Achieved! Congratulations! 🎉',
+                        '🎉 ${AppLocalizations.of(context).translate('goal_achieved')} 🎉',
                         style: Theme.of(context).textTheme.titleMedium?.copyWith(
                           color: Colors.white,
                           fontWeight: FontWeight.bold,

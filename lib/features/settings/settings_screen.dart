@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import '../../core/l10n/app_localizations.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/family_service.dart';
 import '../../core/services/reward_service.dart';
+import '../../core/services/language_service.dart';
 import '../../core/injection/injection.dart';
 import '../../core/services/data_deletion_service.dart';
 
@@ -53,7 +55,7 @@ class _ConfirmDeleteInputState extends State<_ConfirmDeleteInput> {
           child: ElevatedButton.icon(
             onPressed: _canConfirm ? widget.onConfirmed : null,
             icon: const Icon(Icons.delete_forever),
-            label: const Text('Delete'),
+            label: Text(AppLocalizations.of(context).translate('delete')),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red.shade700,
               foregroundColor: Colors.white,
@@ -76,11 +78,24 @@ class SettingsScreen extends StatefulWidget {
 class _SettingsScreenState extends State<SettingsScreen> {
   bool _isRestoring = false;
   late FamilyService _familyService;
+  String _currentLanguage = 'English';
 
   @override
   void initState() {
     super.initState();
     _familyService = getIt<FamilyService>();
+    _loadCurrentLanguage();
+  }
+
+  Future<void> _loadCurrentLanguage() async {
+    final languageService = LanguageService();
+    final locale = await languageService.getSavedLanguage();
+    final langCode = locale?.languageCode ?? 'en';
+    if (mounted) {
+      setState(() {
+        _currentLanguage = langCode == 'zh' ? '中文' : 'English';
+      });
+    }
   }
 
   Future<void> _performRestore() async {
@@ -154,9 +169,11 @@ class _SettingsScreenState extends State<SettingsScreen> {
     final currentUser = AuthService.currentUser;
     final isParent = currentUser?.accountType.name == 'parent';
 
+    final l10n = AppLocalizations.of(context);
+    
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Settings'),
+        title: Text(l10n.settings),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
       ),
       body: SingleChildScrollView(
@@ -166,44 +183,44 @@ class _SettingsScreenState extends State<SettingsScreen> {
           children: [
             // General Settings
             _buildSettingsSection(
-              'General',
+              l10n.translate('general'),
               [
                 _buildSettingsTile(
-                  'Notifications',
-                  'Manage notification preferences',
+                  l10n.translate('notifications'),
+                  l10n.translate('notifications_desc'),
                   Icons.notifications,
-                  () => _showComingSoon('Notifications'),
+                  () => _showComingSoon(l10n.translate('notifications')),
                 ),
                 _buildSettingsTile(
-                  'Theme',
-                  'Choose light or dark theme',
+                  l10n.translate('theme'),
+                  l10n.translate('theme_desc'),
                   Icons.palette,
-                  () => _showComingSoon('Theme settings'),
+                  () => _showComingSoon(l10n.translate('theme')),
                 ),
                 _buildSettingsTile(
-                  'Language',
-                  'Select your preferred language',
+                  l10n.translate('language'),
+                  '${l10n.translate('language_current')}: $_currentLanguage',
                   Icons.language,
-                  () => _showComingSoon('Language settings'),
+                  _showLanguageDialog,
                 ),
               ],
             ),
             const SizedBox(height: 24),
             // Privacy & Security
             _buildSettingsSection(
-              'Privacy & Security',
+              l10n.translate('privacy_security'),
               [
                 _buildSettingsTile(
-                  'Privacy Settings',
-                  'Control your data and privacy',
+                  l10n.translate('privacy_settings'),
+                  l10n.translate('privacy_settings_desc'),
                   Icons.privacy_tip,
-                  () => _showComingSoon('Privacy settings'),
+                  () => _showComingSoon(l10n.translate('privacy_settings')),
                 ),
                 _buildSettingsTile(
-                  'Account Security',
-                  'Manage passwords and authentication',
+                  l10n.translate('account_security'),
+                  l10n.translate('account_security_desc'),
                   Icons.security,
-                  () => _showComingSoon('Account security'),
+                  () => _showComingSoon(l10n.translate('account_security')),
                 ),
               ],
             ),
@@ -211,42 +228,42 @@ class _SettingsScreenState extends State<SettingsScreen> {
             // Parent Only Settings
             if (isParent) ...[
               _buildSettingsSection(
-                'Parent Controls',
+                l10n.translate('parent_controls'),
                 [
                   _buildSettingsTile(
-                    'Family Management',
-                    'Manage family members and settings',
+                    l10n.translate('family_management'),
+                    l10n.translate('family_management_desc'),
                     Icons.family_restroom,
                     _openFamilyManagement,
                   ),
                   _buildSettingsTile(
-                    'Parental Controls',
-                    'Set controls and restrictions for children',
+                    l10n.translate('parental_controls'),
+                    l10n.translate('parental_controls_desc'),
                     Icons.child_care,
-                    () => _showComingSoon('Parental controls'),
+                    () => _showComingSoon(l10n.translate('parental_controls')),
                   ),
                 ],
               ),
               const SizedBox(height: 24),
               // Data Management (Parent Only)
               _buildSettingsSection(
-                'Data Management',
+                l10n.translate('data_management'),
                 [
                   _buildSettingsTile(
-                    'Export Data',
-                    'Download your family data',
+                    l10n.translate('export_data'),
+                    l10n.translate('export_data_desc'),
                     Icons.download,
-                    () => _showComingSoon('Export data'),
+                    () => _showComingSoon(l10n.translate('export_data')),
                   ),
                   _buildDangerousSettingsTile(
-                    'Delete ALL Data',
-                    'Permanently delete all data (family-wide for parent)',
+                    l10n.translate('delete_all_data'),
+                    l10n.translate('delete_all_data_desc'),
                     Icons.delete_forever,
                     _confirmDeleteAllData,
                   ),
                   _buildDangerousSettingsTile(
-                    'Restore to Default',
-                    'Reset all data and restore default tasks/rewards',
+                    l10n.translate('restore_to_default'),
+                    l10n.translate('restore_to_default_desc'),
                     Icons.restore,
                     _showRestoreConfirmation,
                     isLoading: _isRestoring,
@@ -263,25 +280,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
             const SizedBox(height: 24),
             // About & Support
             _buildSettingsSection(
-              'About & Support',
+              l10n.translate('about_support'),
               [
                 _buildSettingsTile(
-                  'Help & FAQ',
-                  'Get help and find answers',
+                  l10n.translate('help_faq'),
+                  l10n.translate('help_faq_desc'),
                   Icons.help_outline,
-                  () => _showComingSoon('Help & FAQ'),
+                  () => _showComingSoon(l10n.translate('help_faq')),
                 ),
                 _buildSettingsTile(
-                  'About',
-                  'App version and information',
+                  l10n.translate('about'),
+                  l10n.translate('about_desc'),
                   Icons.info,
-                  () => _showComingSoon('About'),
+                  () => _showComingSoon(l10n.translate('about')),
                 ),
                 _buildSettingsTile(
-                  'Contact Support',
-                  'Get in touch with our support team',
+                  l10n.translate('contact_support'),
+                  l10n.translate('contact_support_desc'),
                   Icons.support_agent,
-                  () => _showComingSoon('Contact support'),
+                  () => _showComingSoon(l10n.translate('contact_support')),
                 ),
               ],
             ),
@@ -339,7 +356,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.of(context).pop(),
-            child: const Text('Cancel'),
+            child: Text(AppLocalizations.of(context).cancel),
           ),
           ElevatedButton(
             onPressed: () {
@@ -350,7 +367,7 @@ class _SettingsScreenState extends State<SettingsScreen> {
               backgroundColor: Colors.red.shade700,
               foregroundColor: Colors.white,
             ),
-            child: const Text('Delete All & Restore'),
+            child: Text(AppLocalizations.of(context).translate('delete_all_restore')),
           ),
         ],
       ),
@@ -435,10 +452,90 @@ class _SettingsScreenState extends State<SettingsScreen> {
     // This will trigger the family management screen from main app
   }
 
+  void _showLanguageDialog() async {
+    final l10n = AppLocalizations.of(context);
+    final languageService = LanguageService();
+    final currentLocale = await languageService.getSavedLanguage();
+    final currentLang = currentLocale?.languageCode ?? 'en';
+    
+    if (!mounted) return;
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(l10n.selectLanguage),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            ListTile(
+              leading: const Text('🇺🇸', style: TextStyle(fontSize: 32)),
+              title: Text(l10n.english),
+              trailing: currentLang == 'en' 
+                ? const Icon(Icons.check, color: Colors.green)
+                : null,
+              onTap: () async {
+                await languageService.saveLanguage('en');
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  await _loadCurrentLanguage();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${l10n.translate('language_changed')} English. ${l10n.translate('please_restart')}'),
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                  // Restart the app to apply language change
+                  _restartApp();
+                }
+              },
+            ),
+            ListTile(
+              leading: const Text('🇨🇳', style: TextStyle(fontSize: 32)),
+              title: Text(l10n.chinese),
+              trailing: currentLang == 'zh' 
+                ? const Icon(Icons.check, color: Colors.green)
+                : null,
+              onTap: () async {
+                await languageService.saveLanguage('zh');
+                if (mounted) {
+                  Navigator.of(context).pop();
+                  await _loadCurrentLanguage();
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    SnackBar(
+                      content: Text('${l10n.translate('language_changed')}中文。${l10n.translate('please_restart')}'),
+                      behavior: SnackBarBehavior.floating,
+                      duration: const Duration(seconds: 3),
+                    ),
+                  );
+                  // Restart the app to apply language change
+                  _restartApp();
+                }
+              },
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.of(context).pop(),
+            child: Text(l10n.cancel),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _restartApp() {
+    // Navigate to root and replace with a new instance
+    Navigator.of(context).popUntil((route) => route.isFirst);
+    Navigator.of(context).pushReplacementNamed('/');
+  }
+
   void _showComingSoon(String feature) {
+    final l10n = AppLocalizations.of(context);
     ScaffoldMessenger.of(context).showSnackBar(
       SnackBar(
-        content: Text('$feature coming soon!'),
+        content: Text('$feature ${l10n.translate('coming_soon')}'),
         behavior: SnackBarBehavior.floating,
       ),
     );
