@@ -3,6 +3,7 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/injection/injection.dart';
 import '../../core/models/reward_item.dart';
@@ -272,10 +273,6 @@ class _MainAppScreenState extends State<MainAppScreen> {
       appBar: AppBar(
         title: const Text('AI Rewards System'),
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(90),
-          child: const BannerAdWidget(),
-        ),
         actions: [
           IconButton(
             icon: const Icon(Icons.science),
@@ -296,14 +293,21 @@ class _MainAppScreenState extends State<MainAppScreen> {
           ),
         ],
       ),
-      body: IndexedStack(
-        index: _currentIndex,
+      body: Column(
         children: [
-          _buildHomeTab(),
-          _buildTasksTab(),
-          _buildRewardsTab(),
-          _buildFamilyTab(),
-          _buildProfileTab(),
+          const BannerAdWidget(),
+          Expanded(
+            child: IndexedStack(
+              index: _currentIndex,
+              children: [
+                _buildHomeTab(),
+                _buildTasksTab(),
+                _buildRewardsTab(),
+                _buildFamilyTab(),
+                _buildProfileTab(),
+              ],
+            ),
+          ),
         ],
       ),
       bottomNavigationBar: NavigationBar(
@@ -3043,6 +3047,25 @@ class _MainAppScreenState extends State<MainAppScreen> {
                 trailing: const Icon(Icons.chevron_right),
                 onTap: _openHelp,
               ),
+              const Divider(height: 1),
+              ListTile(
+                leading: const Icon(Icons.info_outline),
+                title: const Text('About AI Rewards'),
+                trailing: const Icon(Icons.open_in_new),
+                onTap: () => _openInfoPage('about.html'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.privacy_tip_outlined),
+                title: const Text('Privacy Policy'),
+                trailing: const Icon(Icons.open_in_new),
+                onTap: () => _openInfoPage('privacy.html'),
+              ),
+              ListTile(
+                leading: const Icon(Icons.mail_outline),
+                title: const Text('Contact'),
+                trailing: const Icon(Icons.open_in_new),
+                onTap: () => _openInfoPage('contact.html'),
+              ),
             ],
           ),
         ),
@@ -3061,6 +3084,19 @@ class _MainAppScreenState extends State<MainAppScreen> {
         ),
       ],
     );
+  }
+
+  Future<void> _openInfoPage(String relativePath) async {
+    try {
+      // Resolve against current base (handles deployed subfolder or custom base href)
+      final uri = Uri.base.resolve(relativePath);
+      final launched = await launchUrl(uri, webOnlyWindowName: '_blank');
+      if (!launched) {
+        _showSnackBar('Cannot open page: $relativePath');
+      }
+    } catch (e) {
+      _showSnackBar('Failed to open page: $e');
+    }
   }
 
   Widget _buildFamilyTab() {

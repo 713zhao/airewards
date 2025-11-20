@@ -15,10 +15,13 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
   final AdService _adService = AdService();
   BannerAd? _bannerAd;
   bool _isAdLoaded = false;
+  bool _isLoading = true;
+  String? _errorMessage;
 
   @override
   void initState() {
     super.initState();
+    debugPrint('📱 BannerAdWidget initState - platform: ${kIsWeb ? "Web" : "Mobile"}');
     _loadAd();
   }
 
@@ -26,23 +29,65 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
     if (kIsWeb) {
       // For web, AdSense is loaded via HTML script tags
       // We just show a placeholder container with the ad slot
-      setState(() {
-        _isAdLoaded = true;
-      });
+      if (mounted) {
+        setState(() {
+          _isAdLoaded = true;
+          _isLoading = false;
+        });
+      }
       return;
     }
 
     // For mobile, load AdMob banner
     try {
+      debugPrint('📱 Starting AdMob banner ad load...');
       final ad = await _adService.createBannerAd();
-      if (mounted && ad != null) {
-        setState(() {
-          _bannerAd = ad;
-          _isAdLoaded = _adService.isBannerAdLoaded;
-        });
+      
+      if (!mounted) return;
+      
+      if (ad != null) {
+        debugPrint('📱 Ad object created, setting up widget...');
+        // Set the banner ad immediately - the BannerAdListener will handle the ready state
+        if (mounted) {
+          setState(() {
+            _bannerAd = ad;
+            _isLoading = false;
+          });
+        }
+        
+        // Wait for the ad to load and check status
+        await Future.delayed(const Duration(milliseconds: 1000));
+        
+        if (mounted) {
+          final isLoaded = _adService.isBannerAdLoaded;
+          setState(() {
+            _isAdLoaded = isLoaded;
+            if (_isAdLoaded) {
+              debugPrint('✅ Banner ad successfully loaded and ready to display');
+            } else {
+              debugPrint('⚠️ Ad widget created but waiting for load callback');
+              // Still show the widget, the listener will update when ready
+              _isAdLoaded = true; // Show it anyway, AdWidget handles internal state
+            }
+          });
+        }
+      } else {
+        if (mounted) {
+          setState(() {
+            _isLoading = false;
+            _errorMessage = 'Ad creation returned null';
+            debugPrint('❌ $_errorMessage');
+          });
+        }
       }
     } catch (e) {
       debugPrint('❌ Error loading banner ad: $e');
+      if (mounted) {
+        setState(() {
+          _isLoading = false;
+          _errorMessage = e.toString();
+        });
+      }
     }
   }
 
@@ -55,6 +100,40 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
 
   @override
   Widget build(BuildContext context) {
+    // Show loading state
+    if (_isLoading) {
+      return Container(
+        width: double.infinity,
+        height: 50,
+        color: Theme.of(context).colorScheme.surfaceContainerHighest.withOpacity(0.3),
+        child: const Center(
+          child: SizedBox(
+            width: 20,
+            height: 20,
+            child: CircularProgressIndicator(strokeWidth: 2),
+          ),
+        ),
+      );
+    }
+
+    // Show error state (only in debug mode)
+    if (_errorMessage != null && kDebugMode) {
+      return Container(
+        width: double.infinity,
+        height: 50,
+        color: Colors.red.withOpacity(0.1),
+        padding: const EdgeInsets.all(8),
+        child: Center(
+          child: Text(
+            'Ad Error: $_errorMessage',
+            style: const TextStyle(fontSize: 10, color: Colors.red),
+            textAlign: TextAlign.center,
+          ),
+        ),
+      );
+    }
+
+    // If no ad loaded and not in debug mode, hide
     if (!_isAdLoaded) {
       return const SizedBox.shrink();
     }
@@ -93,10 +172,12 @@ class _BannerAdWidgetState extends State<BannerAdWidget> {
       return const SizedBox.shrink();
     }
 
+    debugPrint('📱 Rendering AdWidget with banner ad');
     return Container(
       width: double.infinity,
       height: _bannerAd!.size.height.toDouble(),
       alignment: Alignment.center,
+      color: Colors.transparent,
       child: AdWidget(ad: _bannerAd!),
     );
   }

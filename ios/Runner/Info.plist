@@ -45,9 +45,9 @@
 	<true/>
 	<key>UIApplicationSupportsIndirectInputEvents</key>
 	<true/>
-	<!-- AdMob App ID (Test ID - replace with actual ID in production) -->
+	<!-- AdMob App ID (Production) -->
 	<key>GADApplicationIdentifier</key>
-	<string>ca-app-pub-3940256099942544~1458002511</string>
+	<string>ca-app-pub-3737089294643612~2806673492</string>
 	<!-- Add SKAdNetwork identifiers for iOS 14+ ad attribution -->
 	<key>SKAdNetworkItems</key>
 	<array>

@@ -70,6 +70,54 @@
   </script>
 </head>
 <body>
-  <script src="flutter_bootstrap.js" async></script>
+  <header>
+    <h1>AI Rewards</h1>
+    <p>A family task & reward system: organize chores, track points, approve child reward suggestions.</p>
+    <nav style="margin-bottom:12px;font-size:14px;">
+      <a href="about.html">About</a> |
+      <a href="privacy.html">Privacy</a> |
+      <a href="contact.html">Contact</a>
+    </nav>
+  </header>
+
+  <!-- Manual responsive Ad unit placed AFTER meaningful content -->
+  <section style="margin:20px 0;">
+    <h2 style="font-size:18px; margin-bottom:8px;">Sponsored</h2>
+    <ins class="adsbygoogle"
+         style="display:block"
+         data-ad-client="ca-pub-3737089294643612"
+         data-ad-slot="1234567890"
+         data-ad-format="auto"
+         data-full-width-responsive="true"></ins>
+  </section>
+
+  <main>
+    <p style="font-size:14px; color:#444;">Flutter web app loads below. Ads deferred until first frame for policy compliance.</p>
+  </main>
+
+  <!-- Deferred AdSense script: moved below content to avoid 'no publisher-content' violations -->
+  <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-3737089294643612" crossorigin="anonymous"></script>
+  <script>
+    // Defer pushing ads until either Flutter first frame or a short timeout ensuring content is present.
+    function initAds() {
+      if (window.adsInitialized) return;
+      window.adsInitialized = true;
+      try { (adsbygoogle = window.adsbygoogle || []).push({}); } catch(e) { console.warn('Ad init error', e); }
+    }
+    // If Flutter triggers its first frame event.
+    window.addEventListener('flutter-first-frame', initAds);
+    // Fallback timeout (2.5s) ensures initialization even if event not caught.
+    window.addEventListener('load', () => setTimeout(initAds, 2500));
+
+    // Example gating for low-content screens: set window.adsDisabled=true before login splash.
+    // When your app authenticates and shows real content, you could call window.enableAds().
+    window.enableAds = function() {
+      if (window.adsDisabled) { window.adsDisabled = false; initAds(); }
+    };
+  </script>
+
+  <div id="app-root">
+    <script src="flutter_bootstrap.js" async></script>
+  </div>
 </body>
 </html>

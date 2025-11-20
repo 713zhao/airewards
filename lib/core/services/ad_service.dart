@@ -12,13 +12,10 @@ class AdService {
   bool _isInitialized = false;
   bool _isBannerAdLoaded = false;
 
-  // Test Ad Unit IDs (replace with your production IDs)
-  // Android Test Banner: ca-app-pub-3940256099942544/6300978111
-  // iOS Test Banner: ca-app-pub-3940256099942544/2934735716
-  static const String _testAndroidBannerId =
-      'ca-app-pub-3940256099942544/6300978111';
-  static const String _testIOSBannerId =
-      'ca-app-pub-3940256099942544/2934735716';
+  // Production Ad Unit IDs
+  // Banner ad unit for both Android and iOS
+  static const String _productionBannerId =
+      'ca-app-pub-3737089294643612/1858330009';
 
   /// Initialize the Mobile Ads SDK (AdMob for mobile platforms)
   Future<void> initialize() async {
@@ -48,12 +45,10 @@ class AdService {
       return '';
     }
 
-    // TODO: Replace with your actual production ad unit IDs
-    // Get your ad unit IDs from: https://apps.admob.com/
-    if (defaultTargetPlatform == TargetPlatform.android) {
-      return _testAndroidBannerId; // Replace with your Android banner ID
-    } else if (defaultTargetPlatform == TargetPlatform.iOS) {
-      return _testIOSBannerId; // Replace with your iOS banner ID
+    // Production banner ad unit ID (same for Android and iOS)
+    if (defaultTargetPlatform == TargetPlatform.android ||
+        defaultTargetPlatform == TargetPlatform.iOS) {
+      return _productionBannerId;
     }
     return '';
   }
@@ -79,24 +74,30 @@ class AdService {
         request: const AdRequest(),
         listener: BannerAdListener(
           onAdLoaded: (ad) {
-            debugPrint('✅ Banner ad loaded');
+            debugPrint('✅ Banner ad LOADED - Ad is ready to display');
             _isBannerAdLoaded = true;
           },
           onAdFailedToLoad: (ad, error) {
-            debugPrint('❌ Banner ad failed to load: $error');
+            debugPrint('❌ Banner ad FAILED to load: ${error.message} (Code: ${error.code})');
+            debugPrint('   Domain: ${error.domain}, Response: ${error.responseInfo}');
             ad.dispose();
             _isBannerAdLoaded = false;
           },
           onAdOpened: (ad) {
-            debugPrint('📱 Banner ad opened');
+            debugPrint('📱 Banner ad opened (user clicked)');
           },
           onAdClosed: (ad) {
             debugPrint('🔙 Banner ad closed');
           },
+          onAdImpression: (ad) {
+            debugPrint('👁️ Banner ad impression recorded');
+          },
         ),
       );
 
+      debugPrint('🔄 Requesting banner ad from AdMob...');
       await _bannerAd!.load();
+      debugPrint('📤 Ad load request sent, waiting for callback...');
       return _bannerAd;
     } catch (e) {
       debugPrint('❌ Error creating banner ad: $e');

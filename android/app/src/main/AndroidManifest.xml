@@ -1,8 +1,10 @@
-<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools">
     
     <!-- Network permissions -->
     <uses-permission android:name="android.permission.INTERNET" />
     <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="com.google.android.gms.permission.AD_ID" tools:node="remove"/>
     
     <application
         android:label="ai_rewards_system"
@@ -36,10 +38,10 @@
             android:name="flutterEmbedding"
             android:value="2" />
         
-        <!-- AdMob App ID (Test ID - replace with actual ID in production) -->
+        <!-- AdMob App ID (Production) -->
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"
-            android:value="ca-app-pub-3940256099942544~3347511713"/>
+            android:value="ca-app-pub-3737089294643612~2806673492"/>
     </application>
     <!-- Required to query activities that can process text, see:
          https://developer.android.com/training/package-visibility and
@@ -51,5 +53,7 @@
             <action android:name="android.intent.action.PROCESS_TEXT"/>
             <data android:mimeType="text/plain"/>
         </intent>
+        <!-- Query for Google Play Services -->
+        <package android:name="com.google.android.gms" />
     </queries>
 </manifest>
