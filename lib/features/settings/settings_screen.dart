@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:url_launcher/url_launcher.dart';
 import '../../core/l10n/app_localizations.dart';
 import '../../core/services/auth_service.dart';
 import '../../core/services/family_service.dart';
@@ -217,6 +218,12 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   () => _showComingSoon(l10n.translate('privacy_settings')),
                 ),
                 _buildSettingsTile(
+                  l10n.translate('privacy_policy'),
+                  l10n.translate('privacy_policy_desc'),
+                  Icons.privacy_tip_outlined,
+                  () => _openInfoPage('privacy.html'),
+                ),
+                _buildSettingsTile(
                   l10n.translate('account_security'),
                   l10n.translate('account_security_desc'),
                   Icons.security,
@@ -289,16 +296,16 @@ class _SettingsScreenState extends State<SettingsScreen> {
                   () => _showComingSoon(l10n.translate('help_faq')),
                 ),
                 _buildSettingsTile(
-                  l10n.translate('about'),
+                  'About',
                   l10n.translate('about_desc'),
                   Icons.info,
-                  () => _showComingSoon(l10n.translate('about')),
+                  () => _openInfoPage('about.html'),
                 ),
                 _buildSettingsTile(
-                  l10n.translate('contact_support'),
+                  l10n.translate('contact'),
                   l10n.translate('contact_support_desc'),
-                  Icons.support_agent,
-                  () => _showComingSoon(l10n.translate('contact_support')),
+                  Icons.mail_outline,
+                  () => _openInfoPage('contact.html'),
                 ),
               ],
             ),
@@ -712,6 +719,25 @@ class _SettingsScreenState extends State<SettingsScreen> {
   Future<void> _assignTasksToChildren() async {
     // TODO: Implement actual assignment logic
     debugPrint('Assign default tasks to children');
+  }
+
+  Future<void> _openInfoPage(String relativePath) async {
+    try {
+      // Resolve against current base (handles deployed subfolder or custom base href)
+      final uri = Uri.base.resolve(relativePath);
+      final launched = await launchUrl(uri, webOnlyWindowName: '_blank');
+      if (!launched && mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Cannot open page: $relativePath')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Failed to open page: $e')),
+        );
+      }
+    }
   }
 
   Future<void> _resetAllFamilyMemberPoints(String familyId) async {

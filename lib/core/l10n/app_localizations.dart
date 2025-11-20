@@ -187,6 +187,7 @@ class AppLocalizations {
       'help_support': 'Help & Support',
       'about_ai_rewards': 'About AI Rewards',
       'privacy_policy': 'Privacy Policy',
+      'privacy_policy_desc': 'View our privacy policy',
       'contact': 'Contact',
       'logout': 'Logout',
       'delete': 'Delete',
@@ -303,6 +304,38 @@ class AppLocalizations {
       'not_part_of_family': 'Not part of any family yet',
       'create_family_description': 'Create a family to start managing tasks and rewards for your children.',
       'join_family_description': 'Join your family to access tasks, earn rewards, and track your progress.',
+      'task_make_bed': 'Make Your Bed before you go to school',
+      'task_make_bed_desc': 'Make your bed neatly every morning',
+      'task_take_trash': 'Take Out Trash',
+      'task_take_trash_desc': 'Take the trash bins to the curb',
+      'task_help_dishes': 'Help with Dishes',
+      'task_help_dishes_desc': 'Help wash, dry, or put away dishes',
+      'task_complete_homework': 'Complete Homework',
+      'task_complete_homework_desc': 'Finish all assigned homework completely',
+      'task_read_english': 'Read English Book for 30 Minutes',
+      'task_read_english_desc': 'Read an English book, magazine, or educational material',
+      'task_read_chinese': 'Read Chinese Book for 15 Minutes',
+      'task_read_chinese_desc': 'Read Chinese books, stories, or practice Chinese characters',
+      'task_clean_room': 'Clean Your Room',
+      'task_clean_room_desc': 'Organize and clean your bedroom thoroughly',
+      'task_organize_supplies': 'Organize School Supplies',
+      'task_organize_supplies_desc': 'Keep your school bag and study area organized',
+      'task_exercise': 'Exercise for 20 Minutes',
+      'task_exercise_desc': 'Do physical exercise, sports, or outdoor activities',
+      'task_feed_pet': 'Feed Pet',
+      'task_feed_pet_desc': 'Feed your pet and provide fresh water',
+      'reward_movie_night': 'Movie Night',
+      'reward_movie_night_desc': 'Choose a family movie for movie night',
+      'reward_extra_allowance': 'Extra Allowance',
+      'reward_extra_allowance_desc': 'Get extra pocket money this week',
+      'reward_game_time': 'Game Time',
+      'reward_game_time_desc': 'Extra 30 minutes of game time',
+      'reward_choose_dinner': 'Choose Dinner',
+      'reward_choose_dinner_desc': 'Pick what we have for dinner tonight',
+      'reward_new_toy': 'New Toy',
+      'reward_new_toy_desc': 'Pick a new toy from the store',
+      'reward_day_out': 'Day Out',
+      'reward_day_out_desc': 'Special day trip to somewhere fun',
     },
     'zh': {
       'app_title': 'AI奖励系统',
@@ -472,6 +505,7 @@ class AppLocalizations {
       'help_support': '帮助与支持',
       'about_ai_rewards': '关于 AI奖励系统',
       'privacy_policy': '隐私政策',
+      'privacy_policy_desc': '查看我们的隐私政策',
       'contact': '联系我们',
       'logout': '退出登录',
       'delete': '删除',
@@ -588,11 +622,139 @@ class AppLocalizations {
       'not_part_of_family': '尚未加入任何家庭',
       'create_family_description': '创建家庭以开始管理孩子的任务和奖励。',
       'join_family_description': '加入你的家庭以访问任务、赚取奖励并跟踪你的进度。',
+      'task_make_bed': '上学前整理床铺',
+      'task_make_bed_desc': '每天早上把床铺整理整齐',
+      'task_take_trash': '倒垃圾',
+      'task_take_trash_desc': '把垃圾桶拿到路边',
+      'task_help_dishes': '帮忙洗碗',
+      'task_help_dishes_desc': '帮忙洗碗、擦干或收拾碗碟',
+      'task_complete_homework': '完成作业',
+      'task_complete_homework_desc': '完整地完成所有布置的作业',
+      'task_read_english': '阅读英文书30分钟',
+      'task_read_english_desc': '阅读英文书籍、杂志或教育材料',
+      'task_read_chinese': '阅读中文书15分钟',
+      'task_read_chinese_desc': '阅读中文书籍、故事或练习汉字',
+      'task_clean_room': '打扫房间',
+      'task_clean_room_desc': '彻底整理和清洁你的卧室',
+      'task_organize_supplies': '整理学习用品',
+      'task_organize_supplies_desc': '保持书包和学习区域整洁有序',
+      'task_exercise': '运动20分钟',
+      'task_exercise_desc': '进行体育锻炼、运动或户外活动',
+      'task_feed_pet': '喂宠物',
+      'task_feed_pet_desc': '给宠物喂食并提供新鲜的水',
+      'reward_movie_night': '电影之夜',
+      'reward_movie_night_desc': '为电影之夜选择一部家庭电影',
+      'reward_extra_allowance': '额外零花钱',
+      'reward_extra_allowance_desc': '本周获得额外的零花钱',
+      'reward_game_time': '游戏时间',
+      'reward_game_time_desc': '额外30分钟的游戏时间',
+      'reward_choose_dinner': '选择晚餐',
+      'reward_choose_dinner_desc': '选择今晚的晚餐吃什么',
+      'reward_new_toy': '新玩具',
+      'reward_new_toy_desc': '从商店挑选一个新玩具',
+      'reward_day_out': '外出游玩',
+      'reward_day_out_desc': '特别的一日游到有趣的地方',
     },
   };
 
   String translate(String key) {
     return _localizedValues[locale.languageCode]?[key] ?? key;
+  }
+
+  /// Translate task title - returns translated version for default tasks, original for user tasks
+  String translateTaskTitle(String title) {
+    // Map of default task titles to their translation keys
+    final taskTitleMap = {
+      'Make Your Bed before you go to school': 'task_make_bed',
+      'Take Out Trash': 'task_take_trash',
+      'Help with Dishes': 'task_help_dishes',
+      'Complete Homework': 'task_complete_homework',
+      'Read English Book for 30 Minutes': 'task_read_english',
+      'Read Chinese Book for 15 Minutes': 'task_read_chinese',
+      'Clean Your Room': 'task_clean_room',
+      'Organize School Supplies': 'task_organize_supplies',
+      'Exercise for 20 Minutes': 'task_exercise',
+      'Feed Pet': 'task_feed_pet',
+    };
+
+    // Check if this is a default task
+    final translationKey = taskTitleMap[title];
+    if (translationKey != null) {
+      return translate(translationKey);
+    }
+
+    // Return original title for user-created tasks
+    return title;
+  }
+
+  /// Translate task description - returns translated version for default tasks, original for user tasks
+  String translateTaskDescription(String description) {
+    // Map of default task descriptions to their translation keys
+    final taskDescMap = {
+      'Make your bed neatly every morning': 'task_make_bed_desc',
+      'Take the trash bins to the curb': 'task_take_trash_desc',
+      'Help wash, dry, or put away dishes': 'task_help_dishes_desc',
+      'Finish all assigned homework completely': 'task_complete_homework_desc',
+      'Read an English book, magazine, or educational material': 'task_read_english_desc',
+      'Read Chinese books, stories, or practice Chinese characters': 'task_read_chinese_desc',
+      'Organize and clean your bedroom thoroughly': 'task_clean_room_desc',
+      'Keep your school bag and study area organized': 'task_organize_supplies_desc',
+      'Do physical exercise, sports, or outdoor activities': 'task_exercise_desc',
+      'Feed your pet and provide fresh water': 'task_feed_pet_desc',
+    };
+
+    // Check if this is a default task description
+    final translationKey = taskDescMap[description];
+    if (translationKey != null) {
+      return translate(translationKey);
+    }
+
+    // Return original description for user-created tasks
+    return description;
+  }
+
+  /// Translate reward title - returns translated version for default rewards, original for user rewards
+  String translateRewardTitle(String title) {
+    // Map of default reward titles to their translation keys
+    final rewardTitleMap = {
+      'Movie Night': 'reward_movie_night',
+      'Extra Allowance': 'reward_extra_allowance',
+      'Game Time': 'reward_game_time',
+      'Choose Dinner': 'reward_choose_dinner',
+      'New Toy': 'reward_new_toy',
+      'Day Out': 'reward_day_out',
+    };
+
+    // Check if this is a default reward
+    final translationKey = rewardTitleMap[title];
+    if (translationKey != null) {
+      return translate(translationKey);
+    }
+
+    // Return original title for user-created rewards
+    return title;
+  }
+
+  /// Translate reward description - returns translated version for default rewards, original for user rewards
+  String translateRewardDescription(String description) {
+    // Map of default reward descriptions to their translation keys
+    final rewardDescMap = {
+      'Choose a family movie for movie night': 'reward_movie_night_desc',
+      'Get extra pocket money this week': 'reward_extra_allowance_desc',
+      'Extra 30 minutes of game time': 'reward_game_time_desc',
+      'Pick what we have for dinner tonight': 'reward_choose_dinner_desc',
+      'Pick a new toy from the store': 'reward_new_toy_desc',
+      'Special day trip to somewhere fun': 'reward_day_out_desc',
+    };
+
+    // Check if this is a default reward description
+    final translationKey = rewardDescMap[description];
+    if (translationKey != null) {
+      return translate(translationKey);
+    }
+
+    // Return original description for user-created rewards
+    return description;
   }
 
   // Convenience getters

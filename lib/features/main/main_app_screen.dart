@@ -3,7 +3,6 @@ import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
-import 'package:url_launcher/url_launcher.dart';
 
 import '../../core/injection/injection.dart';
 import '../../core/l10n/app_localizations.dart';
@@ -27,7 +26,6 @@ import '../../shared/widgets/goal_progress_card.dart';
 import '../auth/login_screen.dart';
 import '../rewards/presentation/widgets/set_goal_dialog.dart';
 import '../family/family_dashboard_screen.dart';
-import '../family/family_management_screen.dart';
 import '../family/join_family_screen.dart';
 import '../rewards/presentation/pages/add_edit_reward_screen.dart';
 import '../rewards/presentation/pages/rewards_management_screen.dart';
@@ -35,7 +33,7 @@ import '../settings/settings_screen.dart';
 import '../tasks/screens/add_task_screen.dart';
 import '../tasks/screens/quick_task_screen.dart';
 import '../tasks/screens/task_management_screen.dart';
-import '../testing/firestore_test_screen.dart';
+import 'transaction_history_screen.dart';
 
 class MainAppScreen extends StatefulWidget {
   const MainAppScreen({super.key});
@@ -100,17 +98,9 @@ class _MainAppScreenState extends State<MainAppScreen> {
 
   // Create a merged stream for the Tasks tab: live tasks + today's generated history
   Stream<List<TaskModel>> _createTasksStreamForDate(DateTime date) {
-    final isToday = DateTime.now().year == date.year && DateTime.now().month == date.month && DateTime.now().day == date.day;
-
-    // For today, show ONLY task_history (generated tasks for the user)
-    // This ensures child users see only their materialized task instances
-    if (isToday) {
-      return _taskService.getTodayHistoryForCurrentUser();
-    }
-
-    // For past dates, also show task_history
-    // In the future, we might want to support viewing history for any date
-    return _taskService.getTodayHistoryForCurrentUser();
+    // Show task_history for the selected date (works for today, past, and future dates)
+    // This ensures users see their materialized task instances for any date
+    return _taskService.getHistoryForDateForCurrentUser(date);
   }
 
   Future<void> _refreshRewardSummaries() async {
@@ -1991,6 +1981,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
             return false;
           } else {
             // For other dates: show tasks that match the selected date
+            final isPastDate = selectedStart.isBefore(todayStart);
 
             // Check if task was completed on the selected date
             if (task.completedAt != null) {
@@ -2004,7 +1995,12 @@ class _MainAppScreenState extends State<MainAppScreen> {
               }
             }
 
-            // Check if task is due on the selected date
+            // For past dates, ONLY show completed tasks (skip pending/due tasks)
+            if (isPastDate) {
+              return false;
+            }
+
+            // For future dates: show tasks due on the selected date
             if (task.dueDate != null) {
               final taskDate = DateTime(
                 task.dueDate!.year,
@@ -2398,7 +2394,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
           children: [
             Expanded(
               child: Text(
-                task.title,
+                AppLocalizations.of(context).translateTaskTitle(task.title),
                 maxLines: 2,
                 softWrap: true,
                 overflow: TextOverflow.ellipsis,
@@ -2925,7 +2921,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
               ),
               const SizedBox(height: 12),
               Text(
-                reward.title,
+                AppLocalizations.of(context).translateRewardTitle(reward.title),
                 textAlign: TextAlign.center,
                 maxLines: 2,
                 overflow: TextOverflow.ellipsis,
@@ -3145,12 +3141,6 @@ class _MainAppScreenState extends State<MainAppScreen> {
                 onTap: _openSettings,
               ),
               ListTile(
-                leading: const Icon(Icons.family_restroom),
-                title: Text(AppLocalizations.of(context).translate('family_management')),
-                trailing: const Icon(Icons.chevron_right),
-                onTap: _openFamilySettings,
-              ),
-              ListTile(
                 leading: const Icon(Icons.history),
                 title: Text(AppLocalizations.of(context).translate('transaction_history')),
                 trailing: const Icon(Icons.chevron_right),
@@ -3161,25 +3151,6 @@ class _MainAppScreenState extends State<MainAppScreen> {
                 title: Text(AppLocalizations.of(context).translate('help_support')),
                 trailing: const Icon(Icons.chevron_right),
                 onTap: _openHelp,
-              ),
-              const Divider(height: 1),
-              ListTile(
-                leading: const Icon(Icons.info_outline),
-                title: Text(AppLocalizations.of(context).translate('about_ai_rewards')),
-                trailing: const Icon(Icons.open_in_new),
-                onTap: () => _openInfoPage('about.html'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.privacy_tip_outlined),
-                title: Text(AppLocalizations.of(context).translate('privacy_policy')),
-                trailing: const Icon(Icons.open_in_new),
-                onTap: () => _openInfoPage('privacy.html'),
-              ),
-              ListTile(
-                leading: const Icon(Icons.mail_outline),
-                title: Text(AppLocalizations.of(context).translate('contact')),
-                trailing: const Icon(Icons.open_in_new),
-                onTap: () => _openInfoPage('contact.html'),
               ),
             ],
           ),
@@ -3199,19 +3170,6 @@ class _MainAppScreenState extends State<MainAppScreen> {
         ),
       ],
     );
-  }
-
-  Future<void> _openInfoPage(String relativePath) async {
-    try {
-      // Resolve against current base (handles deployed subfolder or custom base href)
-      final uri = Uri.base.resolve(relativePath);
-      final launched = await launchUrl(uri, webOnlyWindowName: '_blank');
-      if (!launched) {
-        _showSnackBar('Cannot open page: $relativePath');
-      }
-    } catch (e) {
-      _showSnackBar('Failed to open page: $e');
-    }
   }
 
   Widget _buildFamilyTab() {
@@ -3331,16 +3289,6 @@ class _MainAppScreenState extends State<MainAppScreen> {
                       ),
                     ),
                     const SizedBox(height: 16),
-                    ListTile(
-                      leading: const Icon(Icons.settings),
-                      title: const Text('Family Management'),
-                      subtitle: const Text(
-                        'Add children, manage family settings',
-                      ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: _openFamilyManagement,
-                    ),
-                    const Divider(),
                     ListTile(
                       leading: const Icon(Icons.analytics),
                       title: const Text('Family Dashboard'),
@@ -3769,7 +3717,7 @@ class _MainAppScreenState extends State<MainAppScreen> {
 
   void _viewAllHistory() {
     Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const FirestoreTestScreen()),
+      MaterialPageRoute(builder: (context) => const TransactionHistoryScreen()),
     );
   }
 
@@ -3898,10 +3846,6 @@ class _MainAppScreenState extends State<MainAppScreen> {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const AddEditRewardScreen()),
     );
-  }
-
-  void _openFamilySettings() {
-    _showSnackBar('Family settings feature coming soon!');
   }
 
   void _showPendingRewardDialog(RewardItem reward) {
@@ -4712,12 +4656,6 @@ class _MainAppScreenState extends State<MainAppScreen> {
     );
   }
 
-  void _openFamilyManagement() {
-    Navigator.of(context).push(
-      MaterialPageRoute(builder: (context) => const FamilyManagementScreen()),
-    );
-  }
-
   void _openFamilyDashboard() {
     Navigator.of(context).push(
       MaterialPageRoute(builder: (context) => const FamilyDashboardScreen()),
@@ -5200,7 +5138,7 @@ class _TaskHistoryScreenState extends State<TaskHistoryScreen> {
                   children: [
                     Expanded(
                       child: Text(
-                        task.title,
+                        AppLocalizations.of(context).translateTaskTitle(task.title),
                         style: theme.textTheme.bodyMedium?.copyWith(
                           fontWeight: FontWeight.w500,
                           color: isRedemption ? Colors.red : null,

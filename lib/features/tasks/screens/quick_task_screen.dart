@@ -516,7 +516,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
                           ),
                         Expanded(
                           child: Text(
-                            task.title,
+                            AppLocalizations.of(context).translateTaskTitle(task.title),
                             style: theme.textTheme.bodyMedium?.copyWith(
                               fontWeight: FontWeight.w600,
                             ),
@@ -593,7 +593,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('Task "${task.title}" completed! +${task.pointValue} points'),
+            content: Text('${AppLocalizations.of(context).translate('task')} "${AppLocalizations.of(context).translateTaskTitle(task.title)}" ${AppLocalizations.of(context).translate('task_completed_points')} +${task.pointValue} ${AppLocalizations.of(context).translate('points')}'),
             backgroundColor: Colors.green,
             behavior: SnackBarBehavior.floating,
           ),
@@ -697,7 +697,7 @@ class _QuickTaskScreenState extends State<QuickTaskScreen> {
           ),
         ),
         title: Text(
-          task.title,
+          AppLocalizations.of(context).translateTaskTitle(task.title),
           style: TextStyle(
             decoration: isCompleted ? TextDecoration.lineThrough : null,
             color: isCompleted ? theme.colorScheme.onSurfaceVariant : null,

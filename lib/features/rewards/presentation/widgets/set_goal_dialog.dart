@@ -5,6 +5,7 @@ import '../../../../core/models/reward_item.dart';
 import '../../../../core/services/goal_service.dart';
 import '../../../../core/services/reward_service.dart';
 import '../../../../core/services/auth_service.dart';
+import '../../../../core/l10n/app_localizations.dart';
 
 /// Dialog for creating or editing a goal
 class SetGoalDialog extends StatefulWidget {
@@ -318,8 +319,8 @@ class _SetGoalDialogState extends State<SetGoalDialog> {
                                           : Theme.of(context).colorScheme.onSurfaceVariant,
                                     ),
                                   ),
-                                  title: Text(reward.title),
-                                  subtitle: Text(reward.description),
+                                  title: Text(AppLocalizations.of(context).translateRewardTitle(reward.title)),
+                                  subtitle: Text(AppLocalizations.of(context).translateRewardDescription(reward.description)),
                                   trailing: Container(
                                     padding: const EdgeInsets.symmetric(
                                       horizontal: 12,

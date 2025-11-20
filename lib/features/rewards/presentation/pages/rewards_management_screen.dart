@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'add_edit_reward_screen.dart';
 import '../../../../core/services/reward_service.dart';
 import '../../../../core/models/reward_item.dart';
+import '../../../../core/l10n/app_localizations.dart';
 
 /// Screen for managing rewards (add/edit/delete)
 class RewardsManagementScreen extends StatefulWidget {
@@ -249,7 +250,7 @@ class _RewardsManagementScreenState extends State<RewardsManagementScreen> {
                         children: [
                           Expanded(
                             child: Text(
-                              reward.title,
+                              AppLocalizations.of(context).translateRewardTitle(reward.title),
                               style: const TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 16,
@@ -487,7 +488,7 @@ class _RewardsManagementScreenState extends State<RewardsManagementScreen> {
       builder: (context) => AlertDialog(
         title: Text('${action.capitalize()} Reward'),
         content: Text(
-          'Are you sure you want to $action "${reward.title}"?'
+          'Are you sure you want to $action "${AppLocalizations.of(context).translateRewardTitle(reward.title)}"?'
         ),
         actions: [
           TextButton(
@@ -527,7 +528,7 @@ class _RewardsManagementScreenState extends State<RewardsManagementScreen> {
           mainAxisSize: MainAxisSize.min,
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Are you sure you want to delete "${reward.title}"?'),
+            Text('Are you sure you want to delete "${AppLocalizations.of(context).translateRewardTitle(reward.title)}"?'),
             const SizedBox(height: 8),
             const Text(
               'This action cannot be undone.',
